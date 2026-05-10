@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from pose_detector import PoseDetector, draw_pose
+from metrics import compute_all_metrics
 
 
 APP_TITLE = "快卷吧妈妈 · 本地骨骼服务"
@@ -160,6 +161,80 @@ def scan_segment_pick_keyframes(
     return picked
 
 
+def _scan_segment_for_metrics(
+    video_path: str,
+    start_s: float,
+    end_s: float,
+    n: int,
+    cache_id: str,
+    detector: PoseDetector,
+) -> list[dict[str, Any]]:
+    """
+    Similar to scan_segment_pick_keyframes, but keeps landmarks_pixel for metrics computation.
+    Returns list entries compatible with metrics.get_valid_pairs() expectations.
+    """
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        cap.release()
+        raise RuntimeError(f"Cannot open video: {video_path}")
+
+    start_s = float(max(0.0, start_s))
+    end_s = float(max(start_s, end_s))
+    span = max(0.0, end_s - start_s)
+    if span <= 1e-3:
+        cap.release()
+        return []
+
+    targets = [start_s + (span * i / float(max(1, n - 1))) for i in range(n)]
+    _cap_seek_seconds(cap, start_s)
+
+    samples: list[dict[str, Any]] = []
+    # scan at 10 fps by default in scan_segment_pick_keyframes; mirror here
+    step_s = 0.1
+    next_sample_t = start_s
+
+    while True:
+        cur_t = float(cap.get(cv2.CAP_PROP_POS_MSEC) or (start_s * 1000.0)) / 1000.0
+        if cur_t > end_s + 0.05:
+            break
+        ret, frame = cap.read()
+        if not ret:
+            break
+        cur_t = float(cap.get(cv2.CAP_PROP_POS_MSEC) or (cur_t * 1000.0)) / 1000.0
+        if cur_t + 1e-6 < next_sample_t:
+            continue
+        pose = detector.detect_center_person(frame, cache_id=cache_id)
+        q = _pose_quality(pose)
+        samples.append({"t": float(cur_t), "pose": pose, "quality": float(q)})
+        next_sample_t += step_s
+        if cur_t >= end_s:
+            break
+
+    cap.release()
+    if not samples:
+        return []
+
+    picked_entries: list[dict[str, Any]] = []
+    for tt in targets:
+        window = max(0.2, 2.0 * step_s)
+        candidates = [s for s in samples if abs(s["t"] - tt) <= window]
+        if not candidates:
+            candidates = samples
+        best = max(candidates, key=lambda s: (bool(s["pose"]), s["quality"], -abs(s["t"] - tt)))
+        pose = best["pose"]
+        lm_px = pose.get("landmarks_pixel") if pose else None
+        picked_entries.append(
+            {
+                "frame": None,
+                "landmarks": {"landmarks_pixel": lm_px} if lm_px else None,
+                "t": float(tt),
+                "picked_t": float(best["t"]),
+            }
+        )
+
+    return picked_entries
+
+
 def extract_keyframes_with_tracking(
     video_path: str,
     start_s: float,
@@ -300,6 +375,43 @@ async def compare_keyframes(
             "ref": ref_frames,
             "self": self_frames,
         }
+
+
+@app.post("/api/compare/metrics")
+async def compare_metrics(
+    ref_video: UploadFile = File(...),
+    self_video: UploadFile = File(...),
+    ref_start: float = Form(0),
+    ref_end: float = Form(15),
+    self_start: float = Form(0),
+    self_end: float = Form(15),
+) -> dict[str, Any]:
+    """
+    Compute quantitative dance metrics (angles/amplitude/smoothness/stability) for compare mode.
+    Uses roughly-even timestamps across both selected segments and pairs them.
+    """
+    if not os.path.exists(MODEL_PATH):
+        return {"ok": False, "error": f"Model file missing: {MODEL_PATH}"}
+
+    with tempfile.TemporaryDirectory(prefix="kqmm_") as td:
+        td_path = Path(td)
+        ref_path = td_path / "ref.mp4"
+        self_path = td_path / "self.mp4"
+        _save_upload(ref_video, ref_path)
+        _save_upload(self_video, self_path)
+
+        with PoseDetector(model_path=MODEL_PATH, num_poses=3, mode="video") as detector:
+            teacher = _scan_segment_for_metrics(str(ref_path), float(ref_start), float(ref_end), 30, "ref", detector)
+            student = _scan_segment_for_metrics(str(self_path), float(self_start), float(self_end), 30, "self", detector)
+
+        n = min(len(teacher), len(student))
+        processed = {"teacher": teacher[:n], "student": student[:n], "num_frames": n}
+        try:
+            m = compute_all_metrics(processed)
+        except Exception as e:
+            return {"ok": False, "error": f"metrics failed: {e.__class__.__name__}: {e}"}
+
+        return {"ok": True, "metrics": m}
 
 
 @app.post("/api/compare/overlay_video")

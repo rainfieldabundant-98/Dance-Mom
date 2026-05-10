@@ -553,7 +553,8 @@ const S={
   subjectCandidates:null,
   subjectRefCandidates:null,
   subjectConfirmed:false,
-  subjectRefConfirmed:false
+  subjectRefConfirmed:false,
+  compareMetrics:null
 };
 
 const LOCAL_BACKEND = 'http://localhost:8787';
@@ -1200,6 +1201,10 @@ async function runAnalysis(key){
   if(S.mode==='compare'){
     setLS(1,'active');
     const backendOk = await loadCompareKeyframesFromBackend();
+    if(backendOk){
+      // Best-effort quantitative metrics for better prompts / more stable output.
+      await loadCompareMetricsFromBackend();
+    }
     if(!backendOk){
       // Fall back to in-browser MediaPipe if backend is not running.
       const mpOk=await loadMP();
@@ -1388,6 +1393,29 @@ async function loadCompareKeyframesFromBackend(){
   }
 }
 
+async function loadCompareMetricsFromBackend(){
+  try{
+    const health = await fetch(LOCAL_BACKEND + '/health').catch(()=>null);
+    if(!health || !health.ok) return false;
+    if(!S.refFile || !S.selfFile) return false;
+    const form = new FormData();
+    form.append('ref_video', S.refFile, S.refFile.name || 'ref.mp4');
+    form.append('self_video', S.selfFile, S.selfFile.name || 'self.mp4');
+    form.append('ref_start', String(S.refStart||0));
+    form.append('ref_end', String(S.refEnd||15));
+    form.append('self_start', String(S.selfStart||0));
+    form.append('self_end', String(S.selfEnd||15));
+    const resp = await fetch(LOCAL_BACKEND + '/api/compare/metrics', { method:'POST', body: form });
+    if(!resp.ok) return false;
+    const data = await resp.json();
+    if(!data?.ok) return false;
+    S.compareMetrics = data.metrics || null;
+    return !!S.compareMetrics;
+  }catch(_){
+    return false;
+  }
+}
+
 // ── AI CALLS ──
 async function callAI(provider, key){
   if(S.mode==='quick' && provider==='deepseek'){
@@ -1507,11 +1535,8 @@ function buildSkelReport(){
 
 async function callDeepSeek(key){
   const skelReport=buildSkelReport();
-  const userMsg=`以下是 MediaPipe 骨骼识别对 5 个关键帧的分析结果（导师参考 vs 学员我的）：
-
-${skelReport}
-
-请根据以上数据，用温柔鼓励的语气给这位妈妈学员提供反馈。`;
+  const metricsTxt = S.compareMetrics ? ('\n\n量化指标（JSON）：\n'+JSON.stringify(S.compareMetrics)) : '';
+  const userMsg=`以下是骨骼识别对关键帧的观察结果（导师参考 vs 学员我的）：\n\n${skelReport}${metricsTxt}\n\n请根据以上数据，用温柔鼓励的语气给这位妈妈学员提供反馈。`;
 
   const resp=await fetch('https://api.deepseek.com/v1/chat/completions',{
     method:'POST',
@@ -1568,6 +1593,9 @@ async function callDeepSeekForJsonRepair(key, rawText){
 
 async function callGemini(key){
   const parts=[{text:getSystemPrompt()}];
+  if(S.mode==='compare' && S.compareMetrics){
+    parts.push({text:'量化指标（JSON）：\n'+JSON.stringify(S.compareMetrics)});
+  }
   if(S.mode==='compare'){
     const pairs=collectFramePairsFromRow();
     for(let i=0;i<Math.min(pairs.length,7);i++){
