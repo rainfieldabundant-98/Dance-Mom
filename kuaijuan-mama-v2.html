@@ -199,6 +199,14 @@ input[type=range]{flex:1;accent-color:var(--gold);cursor:pointer;}
 .sharebox{border:1px solid var(--bdr);background:var(--bg2);border-radius:14px;padding:12px 12px;}
 .sharetext{font-size:13px;color:var(--ink-s);line-height:1.7;white-space:pre-wrap;}
 
+.mtable{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:14px;border:1px solid var(--bdr);background:var(--bg2);}
+.mtable th,.mtable td{padding:10px 10px;border-bottom:1px solid rgba(201,168,76,.18);font-size:12px;color:var(--ink-s);text-align:left;vertical-align:top;}
+.mtable th{font-size:11px;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;background:rgba(201,168,76,.08);}
+.mtable tr:last-child td{border-bottom:none;}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:999px;font-size:11px;border:1px solid rgba(201,168,76,.22);background:rgba(255,255,255,.35);color:var(--gold-d);white-space:nowrap;}
+.pill.bad{border-color:rgba(192,81,90,.25);color:var(--rose-d);background:rgba(192,81,90,.08);}
+.pill.good{border-color:rgba(42,123,111,.25);color:#1A5A52;background:rgba(42,123,111,.08);}
+
 .tmpl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1rem;}
 .tmpl-btn{border:2px solid var(--bdr);border-radius:12px;padding:8px;cursor:pointer;transition:all .2s;background:var(--bg2);text-align:center;}
 .tmpl-btn:hover{border-color:var(--gold);}
@@ -447,6 +455,13 @@ input[type=range]{flex:1;accent-color:var(--gold);cursor:pointer;}
       <div class="score-card"><div class="sc-label" id="lbUp">上身观察</div><div class="sc-num" id="s-up">—</div><div class="sc-unit">/ 100</div></div>
       <div class="score-card"><div class="sc-label" id="lbDn">下身观察</div><div class="sc-num" id="s-dn">—</div><div class="sc-unit">/ 100</div></div>
     </div>
+    <div id="metricsWrap" style="display:none;">
+      <div class="sec-label">📊 量化量表（基于骨骼指标）</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.6;margin:-4px 0 10px;">
+        这是“练习参考量表”，用于帮助你定位练习方向（不是考试评分）。
+      </div>
+      <div id="metricsTable"></div>
+    </div>
     <div id="diffWrap">
       <div class="sec-label">🦴 AI 动作观察（不是考试评分，只帮助你找练习方向）</div>
       <div class="skel-legend">
@@ -554,7 +569,8 @@ const S={
   subjectRefCandidates:null,
   subjectConfirmed:false,
   subjectRefConfirmed:false,
-  compareMetrics:null
+  compareMetrics:null,
+  compareMetricsFull:null
 };
 
 const LOCAL_BACKEND = 'http://localhost:8787';
@@ -641,9 +657,9 @@ function applyModeToUI(){
     : '上传参考视频 + 你的自拍视频，AI 会结合骨骼对比做“动作观察参考”（更进阶）。';
 
   document.getElementById('diffWrap').style.display=isQuick?'none':'block';
-  document.getElementById('lbAll').textContent=isQuick?'今日舞感指数':'相似度观察';
-  document.getElementById('lbUp').textContent=isQuick?'上身舒展感':'上身观察';
-  document.getElementById('lbDn').textContent=isQuick?'步伐稳定感':'下身观察';
+  document.getElementById('lbAll').textContent=isQuick?'今日舞感指数':'综合得分';
+  document.getElementById('lbUp').textContent=isQuick?'上身舒展感':'角度相似度';
+  document.getElementById('lbDn').textContent=isQuick?'步伐稳定感':'下半身稳定';
 	}
 
 function updateNextButtonState(){
@@ -1409,6 +1425,9 @@ async function loadCompareMetricsFromBackend(){
     if(!resp.ok) return false;
     const data = await resp.json();
     if(!data?.ok) return false;
+    // Keep the full metrics for table display.
+    S.compareMetricsFull = data.metrics || null;
+
     // Use backend-generated prompt (from llm_evaluator.py) when available.
     if(typeof data.prompt === 'string' && data.prompt.trim()){
       S.compareMetrics = {prompt: data.prompt.trim(), compact: data.compact||null};
@@ -1765,6 +1784,66 @@ ${rawText}`
   return parseModelJson(text);
 }
 
+function gradeLabel(score){
+  const s=Number(score)||0;
+  if(s>=90) return {t:'优秀',c:'good'};
+  if(s>=80) return {t:'良好',c:'good'};
+  if(s>=70) return {t:'有待提高',c:''};
+  return {t:'需要练习',c:'bad'};
+}
+
+function renderMetricsTable(){
+  const wrap=document.getElementById('metricsWrap');
+  const box=document.getElementById('metricsTable');
+  if(!wrap || !box) return;
+  if(S.mode!=='compare' || !S.compareMetricsFull){
+    wrap.style.display='none';
+    box.innerHTML='';
+    return;
+  }
+  const m=S.compareMetricsFull;
+  const overall=Number(m.overall_score)||0;
+  const bd=m.breakdown||{};
+  const dims=[
+    {k:'joint_angle_similarity', name:'关节角度相似度', v:Number(bd.joint_angle_similarity)||0, hint:'更像老师的“弯曲角度/身形形状”'},
+    {k:'amplitude_ratio', name:'动作幅度匹配', v:Number(bd.amplitude_ratio)||0, hint:'手脚末端走得够不够“打开/收住”'},
+    {k:'motion_smoothness', name:'动作流畅度', v:Number(bd.motion_smoothness)||0, hint:'轨迹是否更连贯、更少卡顿'},
+    {k:'lower_body_stiffness', name:'下半身稳定度', v:Number(bd.lower_body_stiffness)||0, hint:'下盘是否更稳、晃动更少'},
+  ];
+
+  const g=gradeLabel(overall);
+  let html='';
+  html+=`<table class="mtable"><thead><tr><th style="width:34%">维度</th><th style="width:18%">得分</th><th>说明</th></tr></thead><tbody>`;
+  html+=`<tr><td><strong>综合得分</strong></td><td><span class="pill ${g.c}">${overall.toFixed(1)} · ${g.t}</span></td><td>按量表加权合成（练习参考，不是考试评分）。</td></tr>`;
+  dims.forEach(d=>{
+    const gg=gradeLabel(d.v);
+    html+=`<tr><td><strong>${d.name}</strong></td><td><span class="pill ${gg.c}">${d.v.toFixed(1)}</span></td><td>${d.hint}</td></tr>`;
+  });
+  html+=`</tbody></table>`;
+
+  // Worst joints
+  const per=(m.joint_angles||{}).per_joint||{};
+  const rows=Object.entries(per).map(([k,info])=>({
+    joint:k,
+    sim:Number(info?.similarity||0)*100,
+    diff:Number(info?.diff||0)
+  })).filter(r=>Number.isFinite(r.sim));
+  rows.sort((a,b)=>a.sim-b.sim);
+  const top=rows.slice(0,6);
+  if(top.length){
+    html+=`<div style="height:10px"></div>`;
+    html+=`<table class="mtable"><thead><tr><th style="width:34%">最值得练的关节</th><th style="width:20%">相似度</th><th>平均角度差</th></tr></thead><tbody>`;
+    top.forEach(r=>{
+      const gg=gradeLabel(r.sim);
+      html+=`<tr><td><strong>${r.joint}</strong></td><td><span class="pill ${gg.c}">${r.sim.toFixed(0)}%</span></td><td>${r.diff.toFixed(1)}°</td></tr>`;
+    });
+    html+=`</tbody></table>`;
+  }
+
+  wrap.style.display='block';
+  box.innerHTML=html;
+}
+
 // ── RENDER ──
 function normalizeAIResult(raw){
   if(!raw || typeof raw!=='object') return raw;
@@ -1840,10 +1919,21 @@ function showResult(data){
 
   document.getElementById('loadWrap').style.display='none';
   document.getElementById('resultWrap').style.display='block';
-  document.getElementById('s-all').textContent=data.overall;
-  document.getElementById('s-up').textContent=data.upper;
-  document.getElementById('s-dn').textContent=data.lower;
+  // Prefer metrics.py outputs for the score cards in compare mode.
+  if(S.mode==='compare' && S.compareMetricsFull){
+    const m=S.compareMetricsFull;
+    const bd=m.breakdown||{};
+    document.getElementById('s-all').textContent=Math.round(Number(m.overall_score)||0);
+    document.getElementById('s-up').textContent=Math.round(Number(bd.joint_angle_similarity)||0);
+    document.getElementById('s-dn').textContent=Math.round(Number(bd.lower_body_stiffness)||0);
+  }else{
+    document.getElementById('s-all').textContent=data.overall;
+    document.getElementById('s-up').textContent=data.upper;
+    document.getElementById('s-dn').textContent=data.lower;
+  }
   document.getElementById('shareText').textContent=data.shareCaption||'';
+
+  renderMetricsTable();
 
   const ovWrap=document.getElementById('overlayVideoWrap');
   if(ovWrap) ovWrap.style.display=(S.mode==='compare')?'block':'none';
