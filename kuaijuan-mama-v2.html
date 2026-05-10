@@ -1,0 +1,2044 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>快卷吧妈妈 v3 · AI舞蹈教练</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#C9A84C;--gold-l:#F5EDD6;--gold-d:#8B6914;
+  --rose:#C0515A;--rose-l:#FAF0F0;--rose-d:#7D2530;
+  --teal:#2A7B6F;--teal-l:#E8F4F2;
+  --ink:#1A1410;--ink-s:#4A3F35;--muted:#9A8F85;
+  --bg:#FFFDF8;--bg2:#FAF6EE;--bdr:rgba(201,168,76,.2);--r:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--ink);overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle at 15% 20%,rgba(201,168,76,.05) 0%,transparent 50%),radial-gradient(circle at 85% 80%,rgba(192,81,90,.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+
+header{position:relative;z-index:10;background:var(--ink);padding:0 1.5rem;display:flex;align-items:center;gap:1rem;height:64px;border-bottom:1px solid rgba(201,168,76,.3);flex-wrap:wrap;}
+.nav-back{display:none;align-items:center;gap:6px;border:1px solid rgba(201,168,76,.28);background:rgba(255,255,255,.06);color:var(--gold-l);border-radius:10px;padding:7px 10px;font-size:12px;cursor:pointer;user-select:none;}
+.nav-back:hover{border-color:rgba(201,168,76,.45);}
+.nav-title{margin-left:auto;font-family:'Noto Serif SC',serif;font-size:14px;color:var(--gold-l);opacity:.9;white-space:nowrap;}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.brand-icon{width:36px;height:36px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.brand-name{font-family:'Noto Serif SC',serif;font-size:18px;font-weight:700;color:var(--gold);letter-spacing:2px;}
+.brand-sub{font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:1px;}
+.hdr-r{margin-left:auto;display:flex;align-items:center;gap:8px;}
+
+/* AI provider selector in header */
+.ai-selector{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(201,168,76,.25);border-radius:10px;padding:6px 10px;}
+.ai-selector label{font-size:11px;color:var(--muted);white-space:nowrap;}
+.ai-selector select{background:transparent;border:none;outline:none;font-size:12px;color:var(--gold-l);font-family:inherit;cursor:pointer;-webkit-appearance:none;}
+.ai-selector select option{background:#1A1410;color:#F5EDD6;}
+.key-wrap{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border:1px solid rgba(201,168,76,.25);border-radius:10px;padding:6px 12px;}
+.key-wrap label{font-size:11px;color:var(--muted);white-space:nowrap;}
+.key-wrap input{background:transparent;border:none;outline:none;font-size:12px;color:var(--gold-l);width:170px;font-family:monospace;}
+.key-wrap input::placeholder{color:rgba(201,168,76,.35);}
+.key-dot{width:8px;height:8px;border-radius:50%;background:#444;transition:background .3s;flex-shrink:0;}
+.key-dot.on{background:#4CAF50;}
+
+.hero{position:relative;z-index:1;text-align:center;padding:2.5rem 1.5rem 1.5rem;}
+.hero .btn{margin-top:10px;}
+.eyebrow{display:inline-flex;align-items:center;gap:6px;background:var(--gold-l);border:1px solid rgba(201,168,76,.3);border-radius:999px;padding:4px 14px;font-size:11px;color:var(--gold-d);letter-spacing:1px;margin-bottom:.75rem;}
+.hero h1{font-family:'Noto Serif SC',serif;font-size:1.9rem;font-weight:700;line-height:1.3;margin-bottom:.5rem;}
+.hero h1 span{color:var(--rose);}
+.hero p{color:var(--muted);font-size:14px;line-height:1.8;max-width:440px;margin:0 auto 1.5rem;}
+
+.steps{display:flex;align-items:center;justify-content:center;margin-bottom:2rem;}
+.snode{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.scirc{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--bdr);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:var(--muted);transition:all .3s;}
+.snode.active .scirc{background:var(--gold);border-color:var(--gold);color:#fff;box-shadow:0 0 0 4px rgba(201,168,76,.15);}
+.snode.done .scirc{background:var(--teal);border-color:var(--teal);color:#fff;}
+.stxt{font-size:10px;color:var(--muted);white-space:nowrap;}
+.snode.active .stxt{color:var(--gold-d);font-weight:500;}
+.snode.done .stxt{color:var(--teal);}
+.sline{width:36px;height:1px;background:var(--bdr);margin-bottom:16px;transition:background .4s;}
+.sline.done{background:var(--teal);}
+
+.main{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:0 1.25rem 5rem;}
+
+.card{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r);padding:1.5rem;margin-bottom:1.25rem;}
+.card.hidden{display:none;}
+.step-title{font-family:'Noto Serif SC',serif;font-size:22px;font-weight:700;margin:0 0 .9rem;}
+.step-sub{color:var(--muted);font-size:13px;line-height:1.7;margin:-.3rem 0 1rem;}
+.ch{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.25rem;}
+.ctitle{font-family:'Noto Serif SC',serif;font-size:16px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px;}
+.cicon{width:26px;height:26px;border-radius:7px;background:var(--gold-l);display:flex;align-items:center;justify-content:center;font-size:13px;}
+.badge{background:var(--gold-l);color:var(--gold-d);font-size:10px;padding:3px 10px;border-radius:999px;border:1px solid rgba(201,168,76,.25);}
+
+.style-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.25rem;}
+.mode-row{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+.mode-pill{display:flex;gap:6px;align-items:center;border:1.5px solid var(--bdr);background:var(--bg2);border-radius:999px;padding:6px 10px;font-size:12px;color:var(--ink-s);cursor:pointer;transition:all .2s;user-select:none;}
+.mode-pill:hover{border-color:var(--gold);}
+.mode-pill.sel-mode{border-color:var(--gold);background:var(--gold-l);box-shadow:0 0 0 3px rgba(201,168,76,.12);color:var(--gold-d);}
+.mode-hint{font-size:12px;color:var(--muted);line-height:1.6;flex:1;min-width:240px;}
+.muted-hide{display:none!important;}
+.sbtn{border:1.5px solid var(--bdr);border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg2);}
+.sbtn:hover{border-color:var(--gold);background:var(--gold-l);}
+.sbtn.sel{border-color:var(--gold);background:var(--gold-l);box-shadow:0 0 0 3px rgba(201,168,76,.12);}
+.si{font-size:1.3rem;margin-bottom:3px;}
+.sn2{font-size:11px;font-weight:500;color:var(--ink-s);}
+.sd{font-size:10px;color:var(--muted);margin-top:1px;}
+
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.ulabel{font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:7px;}
+.dzone{position:relative;border:0;border-radius:12px;background:transparent;padding:1.25rem 0.5rem;text-align:center;cursor:pointer;transition:color .15s, background .15s;overflow:hidden;box-shadow:none;}
+.dzone:hover{background:transparent;}
+.dzone:focus-within{outline:none;}
+.dzone:active .dtitle{color:var(--gold-d);}
+.dzone:hover .dtitle{color:var(--gold-d);}
+.dzone:hover .dicon{filter:drop-shadow(0 1px 0 rgba(201,168,76,.25));}
+.dzone.filled{border-style:solid;border-color:transparent;background:transparent;}
+.dzone input[type=file]{position:absolute;inset:0;opacity:0.001;cursor:pointer;width:100%;height:100%;z-index:2;}
+.dzone > :not(input[type=file]){position:relative;z-index:1;}
+.dzone .dicon,.dzone .dtitle,.dzone .dhint,.dzone .dfname{pointer-events:none;}
+.dzone.filled .dicon,.dzone.filled .dtitle,.dzone.filled .dhint{display:none;}
+.dzone.filled{padding:12px 12px;}
+.dicon{font-size:1.8rem;margin-bottom:6px;}
+.dtitle{font-size:13px;font-weight:500;color:var(--ink-s);margin-bottom:3px;}
+.dhint{font-size:11px;color:var(--muted);}
+.dfname{font-size:11px;color:var(--teal);font-weight:500;margin-top:5px;word-break:break-all;}
+.vprev{margin-top:10px;display:none;}
+.vprev video{width:100%;border-radius:8px;background:#000;max-height:160px;object-fit:contain;display:block;}
+.dzone .vprev video{pointer-events:auto;}
+.dzone.filled .vprev{display:block;}
+
+.infobox{background:var(--teal-l);border:1px solid rgba(42,123,111,.2);border-radius:10px;padding:11px 13px;font-size:13px;color:#1A5A52;line-height:1.7;margin-bottom:1rem;}
+.warnbox{background:#FEF9EC;border:1px solid rgba(186,117,23,.25);border-radius:10px;padding:11px 13px;font-size:13px;color:#7A4F00;line-height:1.7;margin-bottom:1rem;}
+.errbox{background:#FEF0F0;border:1px solid rgba(220,60,60,.25);border-radius:10px;padding:14px;font-size:13px;color:#8B1A1A;line-height:1.7;margin-bottom:1rem;display:none;}
+.errbox.show{display:block;}
+
+.range-col{margin-bottom:1rem;}
+.rl-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.rl-title{font-size:13px;font-weight:500;color:var(--ink-s);}
+.rl-info{font-size:12px;color:var(--gold-d);font-weight:500;}
+.rrow{display:flex;align-items:center;gap:8px;margin:6px 0;}
+.rlabel{font-size:11px;color:var(--muted);min-width:48px;}
+input[type=range]{flex:1;accent-color:var(--gold);cursor:pointer;}
+.rval{font-size:11px;color:var(--gold-d);font-weight:500;min-width:34px;text-align:right;font-variant-numeric:tabular-nums;}
+.divider{height:1px;background:var(--bdr);margin:1rem 0;}
+
+.align-vids{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.vcol-label{font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px;}
+.vmini{width:100%;border-radius:8px;background:#111;max-height:140px;object-fit:contain;display:block;}
+.vtag{font-size:11px;color:var(--muted);text-align:center;margin-top:3px;font-variant-numeric:tabular-nums;}
+
+.frames-wrap{margin:1rem 0;}
+.frames-title{font-size:12px;color:var(--muted);margin-bottom:8px;}
+.frames-row{display:flex;gap:8px;flex-wrap:wrap;}
+.subj-wrap{margin-top:14px;}
+.subj-canvas{width:100%;max-width:640px;border-radius:12px;border:1.5px solid var(--bdr);display:block;background:var(--bg2);}
+.subj-hint{font-size:12px;color:var(--muted);line-height:1.6;margin-top:8px;}
+.fpair-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.fpair-lbl{font-size:9px;color:var(--muted);}
+.fpair{display:flex;gap:2px;border-radius:6px;overflow:hidden;background:#000;border:2px solid transparent;align-items:flex-start;}
+.fpair canvas{width:160px;height:auto;display:block;}
+.fpair{gap:6px;}
+
+.btn-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:1.25rem;}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:9px 18px;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .2s;font-family:inherit;white-space:nowrap;}
+.btn-gold{background:var(--gold);color:#fff;}
+.btn-gold:hover{background:var(--gold-d);transform:translateY(-1px);}
+.btn-gold:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.btn-outline{background:transparent;color:var(--gold-d);border:1.5px solid var(--gold);}
+.btn-outline:hover{background:var(--gold-l);}
+.btn-outline:disabled{opacity:.4;cursor:not-allowed;}
+.btn-teal{background:var(--teal);color:#fff;}
+.btn-teal:hover{background:#1D5E54;transform:translateY(-1px);}
+.btn-teal:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.btn-rose{background:var(--rose);color:#fff;}
+.btn-rose:hover{background:var(--rose-d);transform:translateY(-1px);}
+.btn-gray{background:var(--muted);color:#fff;}
+.btn-gray:hover{background:#7A6F65;}
+
+.loading-wrap{text-align:center;padding:3rem 1rem;}
+.spinner{width:44px;height:44px;border:3px solid rgba(201,168,76,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .9s linear infinite;margin:0 auto 1rem;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.ls-list{list-style:none;}
+.ls{font-size:13px;color:var(--muted);padding:4px 0;display:flex;align-items:center;gap:6px;justify-content:center;}
+.ls::before{content:'○';font-size:10px;}
+.ls.active{color:var(--gold-d);font-weight:500;}
+.ls.active::before{content:'●';color:var(--gold);}
+.ls.done{color:var(--teal);}
+.ls.done::before{content:'✓';}
+.ls.fail{color:var(--rose);}
+.ls.fail::before{content:'✗';color:var(--rose);}
+
+.score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem;}
+.score-card{background:var(--bg2);border:1px solid var(--bdr);border-radius:12px;padding:1.1rem;text-align:center;}
+.sc-label{font-size:11px;color:var(--muted);letter-spacing:.5px;margin-bottom:6px;}
+.sc-num{font-family:'Noto Serif SC',serif;font-size:34px;font-weight:700;color:var(--gold-d);line-height:1;}
+.sc-unit{font-size:11px;color:var(--muted);margin-top:3px;}
+
+.skel-legend{display:flex;gap:12px;align-items:center;margin-bottom:.75rem;flex-wrap:wrap;}
+.leg-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-s);}
+.leg-dot{width:10px;height:10px;border-radius:50%;}
+.diff-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:.5rem;}
+.diff-item{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.diff-item-label{font-size:9px;color:var(--muted);text-align:center;}
+.diff-cwrap{width:100%;border-radius:6px;overflow:hidden;border:1.5px solid var(--bdr);cursor:pointer;transition:border-color .2s;}
+.diff-cwrap:hover{border-color:var(--gold);}
+.diff-cwrap canvas{width:100%;display:block;}
+.diff-bar{width:100%;height:4px;border-radius:2px;}
+
+.sec-label{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin:1.25rem 0 .75rem;display:flex;align-items:center;gap:8px;}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--bdr);}
+.fb-list{list-style:none;}
+.fb-item{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--bdr);align-items:flex-start;}
+.fb-item:last-child{border-bottom:none;}
+.fb-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:1px;}
+.fb-praise{background:var(--gold-l);}
+.fb-improve{background:var(--rose-l);}
+.fb-title{font-size:14px;font-weight:500;color:var(--ink);margin-bottom:2px;}
+.fb-body{font-size:13px;color:var(--ink-s);line-height:1.7;}
+.fb-tip{display:inline-block;margin-top:5px;background:var(--gold-l);color:var(--gold-d);font-size:11px;padding:2px 9px;border-radius:999px;}
+.fb-tip.imp{background:var(--rose-l);color:var(--rose-d);}
+
+.sharebox{border:1px solid var(--bdr);background:var(--bg2);border-radius:14px;padding:12px 12px;}
+.sharetext{font-size:13px;color:var(--ink-s);line-height:1.7;white-space:pre-wrap;}
+
+.tmpl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1rem;}
+.tmpl-btn{border:2px solid var(--bdr);border-radius:12px;padding:8px;cursor:pointer;transition:all .2s;background:var(--bg2);text-align:center;}
+.tmpl-btn:hover{border-color:var(--gold);}
+.tmpl-btn.sel-tmpl{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.15);}
+.tmpl-prev{width:100%;height:68px;border-radius:8px;margin-bottom:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;}
+.t-elegant{background:#1A1410;color:#C9A84C;}
+.t-bloom{background:linear-gradient(135deg,#FAF0F0,#F5C0C8);color:#7D2530;}
+.t-jade{background:linear-gradient(135deg,#E8F4F2,#A8D8D0);color:#0F5048;}
+.tmpl-name{font-size:11px;font-weight:500;color:var(--ink-s);}
+
+.best-picker-title{font-size:13px;color:var(--ink-s);margin-bottom:8px;}
+.best-frames-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;}
+.bfthumb{cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid var(--bdr);transition:border-color .2s;position:relative;}
+.bfthumb.sel-bf{border-color:var(--gold);}
+.bfthumb canvas{width:80px;height:52px;display:block;}
+.ai-badge{position:absolute;top:2px;right:2px;background:var(--gold);color:#fff;font-size:8px;padding:1px 4px;border-radius:3px;}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;display:none;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--bg);border-radius:20px;padding:1.5rem;max-width:520px;width:92%;max-height:92vh;overflow-y:auto;}
+.modal-close-x{position:absolute;top:10px;right:10px;border:none;background:transparent;font-size:18px;cursor:pointer;color:var(--muted);padding:6px;line-height:1;}
+.modal-close-x:hover{color:var(--ink-s);}
+.modal{position:relative;}
+.modal-btns{position:sticky;bottom:0;background:linear-gradient(to top,var(--bg) 65%,rgba(255,255,255,0));padding-top:10px;}
+.modal-title{font-family:'Noto Serif SC',serif;font-size:16px;font-weight:600;margin-bottom:1rem;}
+#exportCanvas{width:100%;border-radius:12px;display:block;margin-bottom:1rem;}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;}
+
+@media(max-width:600px){
+  .upload-grid,.align-vids,.score-grid,.tmpl-grid{grid-template-columns:1fr 1fr;}
+  .fpair canvas{width:132px;height:auto;}
+  .diff-grid{grid-template-columns:repeat(3,1fr);}
+  .style-grid{grid-template-columns:repeat(2,1fr);}
+  .hero h1{font-size:1.5rem;}
+  header{padding:0 1rem;height:auto;padding:8px 1rem;}
+  .hero{padding:1.5rem 1.2rem 1rem;}
+  .step-title{font-size:24px;}
+  .nav-title{font-size:13px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <button class="nav-back" id="navBack" onclick="goPrev()" aria-label="返回上一步">← 返回</button>
+  <a class="brand" href="#">
+    <div class="brand-icon">💃</div>
+    <div>
+      <div class="brand-name">快卷吧妈妈</div>
+      <div class="brand-sub">AI 舞蹈夸夸教练</div>
+    </div>
+  </a>
+  <div class="nav-title" id="navTitle">首页</div>
+</header>
+
+<div class="hero">
+  <div class="eyebrow">✨ 先夸夸，再建议</div>
+  <h1>妈妈你跳得真不错，<span>AI 来夸夸</span></h1>
+  <p>上传一段跳舞视频，AI 先夸夸你的闪光点，再给一点温柔小建议，并生成一张可以分享的成长卡。</p>
+  <div class="btn-row" style="justify-content:center;margin-top:0;">
+    <button class="btn btn-gold" onclick="goStep1()">开始 →</button>
+  </div>
+  <div class="steps">
+    <div class="snode active" id="sn1"><div class="scirc">1</div><div class="stxt">上传视频</div></div>
+    <div class="sline" id="sl1"></div>
+    <div class="snode" id="sn2"><div class="scirc">2</div><div class="stxt">选时间段</div></div>
+    <div class="sline" id="sl2"></div>
+    <div class="snode" id="sn3"><div class="scirc">3</div><div class="stxt" id="step3Txt">提取关键帧</div></div>
+    <div class="sline" id="sl3"></div>
+    <div class="snode" id="sn4"><div class="scirc">4</div><div class="stxt" id="step4Txt">AI夸夸</div></div>
+    <div class="sline" id="sl4"></div>
+    <div class="snode" id="sn5"><div class="scirc">5</div><div class="stxt">导出卡片</div></div>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- CARD 0: Mode -->
+<div class="card hidden" id="card0">
+  <div class="step-title">选择模式</div>
+  <div class="step-sub">先选你这次想要的体验：只夸夸，还是导师对比。</div>
+  <div class="mode-row">
+    <div class="mode-pill sel-mode" id="modeQuick" onclick="setMode('quick')">⚡ 纯夸夸（只上传我的视频）</div>
+    <div class="mode-pill" id="modeCompare" onclick="setMode('compare')">🎯 进阶对比（导师 vs 我）</div>
+  </div>
+  <div class="mode-hint" id="modeHint" style="margin-top:6px;">只上传你的跳舞视频即可。无需参考视频、无需对齐，直接生成夸夸报告。</div>
+  <div class="btn-row"><button class="btn btn-gold" id="btn0" onclick="goStepUpload()">下一步：上传视频 →</button></div>
+</div>
+
+<!-- CARD 1: Upload -->
+<div class="card hidden" id="card1">
+  <div class="step-title">上传视频</div>
+  <div class="step-sub">建议选 10–15 秒、全身入镜、光线更好的片段，识别会更稳。</div>
+  <div class="upload-grid">
+    <div id="refUploadWrap">
+      <div class="ulabel">参考视频（老师/示范）</div>
+      <label class="dzone" id="dz-ref">
+        <input id="file-ref" type="file" accept="video/*" onchange="handleFile('ref',this)">
+        <div class="dicon">🎬</div><div class="dtitle">点击上传参考视频</div><div class="dhint">MP4·MOV</div><div class="dfname" id="fn-ref"></div>
+        <div class="vprev" id="vp-ref"><video id="v-ref" controls muted playsinline></video></div>
+      </label>
+    </div>
+    <div>
+      <div class="ulabel">我的视频（妈妈自拍）</div>
+      <label class="dzone" id="dz-self">
+        <input id="file-self" type="file" accept="video/*" onchange="handleFile('self',this)">
+        <div class="dicon">🤳</div><div class="dtitle">点击上传自己的视频</div><div class="dhint">MP4·MOV</div><div class="dfname" id="fn-self"></div>
+        <div class="vprev" id="vp-self"><video id="v-self" controls muted playsinline></video></div>
+      </label>
+    </div>
+  </div>
+  <div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.6;">
+    隐私提示：这是黑客松 Demo 版本，请勿上传敏感或隐私视频。视频仅用于本次 AI 分析，当前不会上传到你的服务器（但会发送到你选择的 AI 服务商进行推理）。
+  </div>
+  <div class="btn-row"><button class="btn btn-gold" id="btn1" disabled onclick="goStep2()">下一步：选时间段 →</button></div>
+</div>
+
+<!-- CARD 2: Time Range -->
+<div class="card hidden" id="card2">
+  <div class="step-title">选择时间段</div>
+  <div class="step-sub">选一段你最满意、最完整的片段（建议 10–15 秒）。</div>
+  <div class="warnbox">💡 建议选择 10–15 秒的精彩段落，去掉开头热身和结尾停顿。时间段长短不影响继续操作。</div>
+  <div class="range-col" id="refRangeWrap">
+    <div class="rl-row"><span class="rl-title">参考视频</span><span class="rl-info" id="ri-ref">—</span></div>
+    <div class="rrow"><span class="rlabel">起点</span><input type="range" id="rs-ref" min="0" max="60" value="0" step="0.1" oninput="updateRange('ref')"><span class="rval" id="rv-s-ref">0.0s</span></div>
+    <div class="rrow"><span class="rlabel">终点</span><input type="range" id="re-ref" min="0" max="60" value="15" step="0.1" oninput="updateRange('ref')"><span class="rval" id="rv-e-ref">15.0s</span></div>
+  </div>
+  <div class="divider" id="rangeDivider"></div>
+  <div class="range-col">
+    <div class="rl-row"><span class="rl-title">我的视频</span><span class="rl-info" id="ri-self">—</span></div>
+    <div class="rrow"><span class="rlabel">起点</span><input type="range" id="rs-self" min="0" max="60" value="0" step="0.1" oninput="updateRange('self')"><span class="rval" id="rv-s-self">0.0s</span></div>
+    <div class="rrow"><span class="rlabel">终点</span><input type="range" id="re-self" min="0" max="60" value="15" step="0.1" oninput="updateRange('self')"><span class="rval" id="rv-e-self">15.0s</span></div>
+  </div>
+  <div class="btn-row"><button class="btn btn-gold" onclick="goStepSubject()" id="btnToSub">下一步：选择主体 →</button></div>
+</div>
+
+<!-- CARD 2.5: Subject -->
+<div class="card hidden" id="cardSub">
+  <div class="step-title">选择主体</div>
+  <div class="step-sub">只用于进阶对比：锁定“导师”和“你”，避免骨骼跑到别人身上。</div>
+  <div class="subj-wrap" id="subjectWrap" style="display:none;">
+    <div class="sec-label">🧍 选择主体（进阶对比用）</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;">
+      <div>
+        <div style="font-size:12px;color:var(--ink-s);margin-bottom:6px;">导师/参考视频（起点）</div>
+        <canvas id="subjectCanvasRef" class="subj-canvas" width="640" height="360"></canvas>
+        <div class="btn-row" style="justify-content:flex-start;margin-top:10px">
+          <button class="btn btn-teal" id="btnRefYes" disabled onclick="confirmSubject('ref')">✅ 选中导师</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--ink-s);margin-bottom:6px;">我的视频（起点）</div>
+        <canvas id="subjectCanvasSelf" class="subj-canvas" width="640" height="360"></canvas>
+        <div class="btn-row" style="justify-content:flex-start;margin-top:10px">
+          <button class="btn btn-teal" id="btnSelfYes" disabled onclick="confirmSubject('self')">✅ 选中我</button>
+        </div>
+      </div>
+    </div>
+    <div class="subj-hint" id="subjectHint">我们会在两段视频的“起点画面”里各自动识别 3 个候选主体，用大色块标出来。请分别确认导师和你自己，避免骨骼跑到别人身上。</div>
+    <div class="btn-row" style="justify-content:flex-start;">
+      <button class="btn btn-outline" id="btnSubjectRescan" onclick="scanSubject()">🔄 重新识别</button>
+    </div>
+  </div>
+  <div class="btn-row"><button class="btn btn-gold" onclick="goStep3()" id="btnTo3">下一步：关键帧 →</button></div>
+</div>
+
+<!-- CARD 3: Align -->
+<div class="card hidden" id="card3">
+  <div class="step-title" id="card3Title">对齐起点</div>
+  <div class="step-sub" id="card3Sub">把两段视频都拖到相同的起始动作（比如第一拍抬手）。</div>
+  <div class="infobox" id="alignInfo">💡 把两段视频都拖到<strong>相同的起始动作</strong>（比如第一拍抬手的瞬间）。AI 会参考关键动作给你练习方向（不是考试评分）。</div>
+  <div class="align-vids" id="alignVids">
+    <div><div class="vcol-label">参考视频</div><video class="vmini" id="va-ref" muted playsinline></video><div class="vtag" id="vt-ref">0.00s</div></div>
+    <div><div class="vcol-label">我的视频</div><video class="vmini" id="va-self" muted playsinline></video><div class="vtag" id="vt-self">0.00s</div></div>
+  </div>
+  <div class="rrow" id="alignRefRow"><span class="rlabel" style="min-width:72px">参考起点</span><input type="range" id="al-ref" min="0" max="60" value="0" step="0.05" oninput="doAlign('ref',this.value)"><span class="rval" id="av-ref">0.0s</span></div>
+  <div class="rrow" id="alignSelfRow"><span class="rlabel" style="min-width:72px">我的起点</span><input type="range" id="al-self" min="0" max="60" value="0" step="0.05" oninput="doAlign('self',this.value)"><span class="rval" id="av-self">0.0s</span></div>
+  <div class="frames-wrap">
+    <div class="frames-title">📸 关键帧预览（均匀抽取）</div>
+    <div class="frames-row" id="framesRow"><div style="font-size:12px;color:var(--muted);padding:10px 0">点击「提取关键帧」查看预览</div></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="extractFrames()">📸 提取关键帧</button>
+    <button class="btn btn-teal" id="btn3" disabled onclick="goStepApi()">🔑 填 API Key →</button>
+  </div>
+</div>
+
+<!-- CARD 3.5: API -->
+<div class="card hidden" id="cardApi">
+  <div class="step-title">填写 API Key</div>
+  <div class="step-sub">这是 Demo 用法：Key 直接在浏览器里使用。正式版建议改成后端代理。</div>
+  <div class="ai-selector" style="width:100%;justify-content:space-between;">
+    <label>AI 模型</label>
+    <select id="aiProvider" onchange="updateProviderHint()" style="flex:1;text-align:right;">
+      <option value="gemini">Gemini 视觉教练</option>
+      <option value="deepseek">DeepSeek 文本教练</option>
+    </select>
+  </div>
+  <div style="height:10px;"></div>
+  <div class="key-wrap" style="width:100%;justify-content:space-between;">
+    <label id="keyLabel">DeepSeek Key</label>
+    <input type="password" id="apiKey" placeholder="sk-..." oninput="checkKey()" style="flex:1;">
+    <div class="key-dot" id="keyDot"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-gold" onclick="goStep4()">🤖 开始 AI 分析 →</button>
+  </div>
+</div>
+
+<!-- CARD 4: Result -->
+<div class="card hidden" id="card4">
+  <div class="step-title">AI 夸夸报告</div>
+  <div class="step-sub">先夸夸，再给一个小小练习方向。</div>
+
+  <!-- Error box -->
+  <div class="errbox" id="errBox">
+    <strong>⚠️ AI 分析出错了</strong><br>
+    <span id="errMsg"></span><br><br>
+    <details id="rawDetails" style="display:none;margin-top:10px;">
+      <summary style="cursor:pointer;color:var(--ink-s);">查看原始返回（调试用）</summary>
+      <pre id="rawText" style="white-space:pre-wrap;word-break:break-word;background:var(--bg2);border:1px solid var(--bdr);padding:10px;border-radius:12px;margin-top:10px;max-height:240px;overflow:auto;"></pre>
+      <div class="btn-row" style="justify-content:flex-start;margin-top:10px">
+        <button class="btn btn-outline" onclick="copyRaw()">📋 复制原始返回</button>
+      </div>
+    </details>
+    <div class="btn-row" style="margin-top:0">
+      <button class="btn btn-gold" onclick="retryAnalysis()">🔄 重试</button>
+      <button class="btn btn-gray" onclick="goBackAlign()">← 返回修改</button>
+    </div>
+  </div>
+
+  <div class="loading-wrap" id="loadWrap">
+    <div class="spinner"></div>
+    <div style="color:var(--muted);font-size:14px;margin-bottom:1rem">正在分析，请稍等～</div>
+    <ul class="ls-list">
+      <li class="ls" id="ls1">加载 MediaPipe 骨骼识别模型</li>
+      <li class="ls" id="ls2">提取关键帧骨骼关键点</li>
+      <li class="ls" id="ls3">计算参考与学员动作差异</li>
+      <li class="ls" id="ls4">AI 生成专属鼓励建议</li>
+    </ul>
+  </div>
+
+  <div id="resultWrap" style="display:none">
+    <div class="score-grid" id="scoreGrid">
+      <div class="score-card"><div class="sc-label" id="lbAll">综合观察</div><div class="sc-num" id="s-all">—</div><div class="sc-unit">/ 100</div></div>
+      <div class="score-card"><div class="sc-label" id="lbUp">上身观察</div><div class="sc-num" id="s-up">—</div><div class="sc-unit">/ 100</div></div>
+      <div class="score-card"><div class="sc-label" id="lbDn">下身观察</div><div class="sc-num" id="s-dn">—</div><div class="sc-unit">/ 100</div></div>
+    </div>
+    <div id="diffWrap">
+      <div class="sec-label">🦴 AI 动作观察（不是考试评分，只帮助你找练习方向）</div>
+      <div class="skel-legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#378ADF"></div>参考骨骼</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#E8A030"></div>你的骨骼</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#E24B4A"></div>差异大关节</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#4CAF50"></div>差异小关节</div>
+        <div style="font-size:10px;color:var(--muted);margin-left:auto">点击任意帧选为封面</div>
+      </div>
+      <div class="diff-grid" id="diffGrid"></div>
+    </div>
+    <div id="overlayVideoWrap" style="display:none;">
+      <div class="sec-label">🎞️ 骨骼标注对比小视频</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:8px;">把关键帧拼成一个短视频，方便你直观看到哪个动作更需要练～</div>
+      <div class="btn-row" style="justify-content:flex-start;margin-top:0;">
+        <button class="btn btn-outline" onclick="generateOverlayVideo()">生成对比视频</button>
+      </div>
+      <video id="overlayVideo" controls playsinline style="width:100%;border-radius:12px;border:1px solid var(--bdr);margin-top:10px;display:none;"></video>
+    </div>
+    <div class="sec-label">🌹 做得超棒的地方</div>
+    <ul class="fb-list" id="praiseList"></ul>
+    <div class="sec-label">💪 温柔小建议</div>
+    <ul class="fb-list" id="improveList"></ul>
+    <div class="sec-label">📮 帮你写好了分享文案</div>
+    <div class="sharebox">
+      <div class="sharetext" id="shareText"></div>
+      <div class="btn-row" style="justify-content:flex-start;margin-top:10px">
+        <button class="btn btn-outline" onclick="copyShare()">📋 复制文案</button>
+      </div>
+    </div>
+    <div class="sec-label">🎨 导出成绩卡</div>
+    <div class="best-picker-title">选择最漂亮的一帧作为封面（AI 已推荐，可手动换）</div>
+    <div class="best-frames-row" id="bestFramesRow"></div>
+    <div class="tmpl-grid">
+      <div class="tmpl-btn sel-tmpl" onclick="selTmpl(this,'elegant')"><div class="tmpl-prev t-elegant">典雅金黑</div><div class="tmpl-name">典雅金黑</div></div>
+      <div class="tmpl-btn" onclick="selTmpl(this,'bloom')"><div class="tmpl-prev t-bloom">玫瑰盛放</div><div class="tmpl-name">玫瑰盛放</div></div>
+      <div class="tmpl-btn" onclick="selTmpl(this,'jade')"><div class="tmpl-prev t-jade">翡翠清雅</div><div class="tmpl-name">翡翠清雅</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-rose" onclick="openExport()">✨ 预览并导出成绩卡</button>
+      <button class="btn btn-outline" onclick="restart()">🔄 再分析一次</button>
+      <button class="btn btn-gray" onclick="openTeacher()">👩‍🏫 想要老师认真点评？</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <button class="modal-close-x" onclick="closeModal()" aria-label="关闭">✕</button>
+    <div class="modal-title">🎴 成绩卡预览</div>
+    <canvas id="exportCanvas"></canvas>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeModal()">关闭</button>
+      <button class="btn btn-gold" onclick="downloadCard()">💾 保存图片</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="teacherBg">
+  <div class="modal">
+    <div class="modal-title">👩‍🏫 提交给舞蹈老师（功能预告）</div>
+    <div style="font-size:13px;color:var(--ink-s);line-height:1.8;">
+      AI 已经帮老师整理好了：<br>
+      - 你这段舞的亮点<br>
+      - 最值得关注的练习片段<br>
+      - 你下次可以练习的小目标<br><br>
+      正式版将支持舞蹈老师付费点评（本按钮目前仅做演示）。
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeTeacher()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="frameBg">
+  <div class="modal" style="max-width:980px;">
+    <button class="modal-close-x" onclick="closeFrame()" aria-label="关闭">✕</button>
+    <div class="modal-title">🔍 关键帧骨骼对比放大查看</div>
+    <canvas id="frameCanvas" style="width:100%;border-radius:12px;border:1px solid var(--bdr);display:block;"></canvas>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeFrame()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const S={
+  mode:'quick', // quick | compare
+  refFile:null,selfFile:null,
+	  refDur:60,selfDur:60,
+	  refStart:0,refEnd:15,
+	  selfStart:0,selfEnd:15,
+  refAlign:0,selfAlign:0,
+  refW:0,refH:0,selfW:0,selfH:0,
+  skelFrames:[],frames:[],
+  bestFrameIdx:0,template:'elegant',
+  aiResult:null,diffOrder:[],
+  mpReady:false,mpModel:null,
+  lastKey:'',
+  lastRawAIText:'',
+  subjectSelfAnchor:null,
+  subjectRefAnchor:null,
+  subjectCandidates:null,
+  subjectRefCandidates:null,
+  subjectConfirmed:false,
+  subjectRefConfirmed:false
+};
+
+const LOCAL_BACKEND = 'http://localhost:8787';
+
+function canvasSizeFor(type){
+  const vw=Number(S[type+'W']||0), vh=Number(S[type+'H']||0);
+  if(vw>0 && vh>0){
+    const portrait = vh > vw;
+    return portrait ? {w:360,h:640} : {w:640,h:360};
+  }
+  return {w:640,h:360};
+}
+
+// ── Provider hints ──
+const PROVIDERS={
+  deepseek:{label:'DeepSeek Key',ph:'sk-...'},
+  gemini:{label:'Gemini Key',ph:'AIzaSy...'}
+};
+	function updateProviderHint(){
+	  const p=document.getElementById('aiProvider').value;
+	  const conf=PROVIDERS[p]||{label:'API Key',ph:'输入 Key...'};
+	  document.getElementById('keyLabel').textContent=conf.label;
+	  document.getElementById('apiKey').placeholder=conf.ph;
+	}
+function checkKey(){
+  const k=document.getElementById('apiKey').value.trim();
+  S.lastKey=k;
+  document.getElementById('keyDot').className='key-dot'+(k.length>10?' on':'');
+}
+
+// `label > input[type=file]` already handles click-to-open reliably across browsers.
+
+function setMode(mode){
+  if(mode!=='quick' && mode!=='compare') return;
+  S.mode=mode;
+  applyModeToUI();
+  updateNextButtonState();
+
+  if(S.mode==='compare'){
+    S.subjectConfirmed=false;
+    S.subjectRefConfirmed=false;
+    S.subjectSelfAnchor=null;
+    S.subjectRefAnchor=null;
+    S.subjectCandidates=null;
+    S.subjectRefCandidates=null;
+    const btnTo3=document.getElementById('btnTo3');
+    if(btnTo3) btnTo3.disabled=true;
+  }
+}
+
+function applyModeToUI(){
+  const isQuick=S.mode==='quick';
+	  document.getElementById('modeQuick').classList.toggle('sel-mode',isQuick);
+	  document.getElementById('modeCompare').classList.toggle('sel-mode',!isQuick);
+	  document.getElementById('refUploadWrap').classList.toggle('muted-hide',isQuick);
+	  document.getElementById('refRangeWrap').classList.toggle('muted-hide',isQuick);
+	  document.getElementById('rangeDivider').classList.toggle('muted-hide',isQuick);
+
+	  document.getElementById('step3Txt').textContent=isQuick?'提取关键帧':'对齐起点';
+	  document.getElementById('step4Txt').textContent=isQuick?'AI夸夸':'AI观察';
+
+	  document.getElementById('btnTo3').textContent='下一步：关键帧 →';
+    const btnToSub=document.getElementById('btnToSub');
+    if(btnToSub) btnToSub.textContent=isQuick?'下一步：关键帧 →':'下一步：选择主体 →';
+	  const btn3=document.getElementById('btn3');
+	  if(btn3) btn3.textContent='🔑 填 API Key →';
+
+	  if(isQuick){
+	    document.getElementById('alignInfo').classList.add('muted-hide');
+	    document.getElementById('alignVids').classList.add('muted-hide');
+	    document.getElementById('alignRefRow').classList.add('muted-hide');
+	    document.getElementById('alignSelfRow').classList.add('muted-hide');
+	    document.querySelector('.frames-title').textContent='📸 关键帧预览（在你选择的时间段里均匀抽取）';
+	  }else{
+	    document.getElementById('alignInfo').classList.remove('muted-hide');
+	    document.getElementById('alignVids').classList.remove('muted-hide');
+	    document.getElementById('alignRefRow').classList.remove('muted-hide');
+	    document.getElementById('alignSelfRow').classList.remove('muted-hide');
+	    document.querySelector('.frames-title').textContent='📸 关键帧预览（均匀抽取）';
+	  }
+
+  document.getElementById('modeHint').textContent=isQuick
+    ? '只上传你的跳舞视频即可。无需参考视频、无需对齐，直接生成夸夸报告。'
+    : '上传参考视频 + 你的自拍视频，AI 会结合骨骼对比做“动作观察参考”（更进阶）。';
+
+  document.getElementById('diffWrap').style.display=isQuick?'none':'block';
+  document.getElementById('lbAll').textContent=isQuick?'今日舞感指数':'相似度观察';
+  document.getElementById('lbUp').textContent=isQuick?'上身舒展感':'上身观察';
+  document.getElementById('lbDn').textContent=isQuick?'步伐稳定感':'下身观察';
+	}
+
+function updateNextButtonState(){
+  const btn=document.getElementById('btn1');
+  if(!btn) return;
+  if(S.mode==='quick') btn.disabled=!S.selfFile;
+  else btn.disabled=!(S.refFile && S.selfFile);
+}
+
+	function handleFile(type,input){
+	  const f=input.files[0]; if(!f) return;
+	  S[type+'File']=f;
+  const url=URL.createObjectURL(f);
+  document.getElementById('fn-'+type).textContent=f.name;
+  document.getElementById('dz-'+type).classList.add('filled');
+  const vid=document.getElementById('v-'+type);
+  vid.src=url;
+  document.getElementById('vp-'+type).style.display='block';
+	  vid.onloadedmetadata=()=>{
+    const dur=vid.duration;
+    S[type+'Dur']=dur;
+    S[type+'W']=vid.videoWidth||0;
+    S[type+'H']=vid.videoHeight||0;
+    document.getElementById('rs-'+type).max=dur;
+    document.getElementById('re-'+type).max=dur;
+    const end=Math.min(dur,15);
+    document.getElementById('re-'+type).value=end;
+	    S[type+'End']=end; updateRange(type);
+	  };
+	  updateNextButtonState();
+	}
+
+function updateRange(type){
+  const s=parseFloat(document.getElementById('rs-'+type).value);
+  const e=parseFloat(document.getElementById('re-'+type).value);
+  const dur=e-s;
+  document.getElementById('rv-s-'+type).textContent=s.toFixed(1)+'s';
+  document.getElementById('rv-e-'+type).textContent=e.toFixed(1)+'s';
+  document.getElementById('ri-'+type).textContent=`${s.toFixed(1)}s — ${e.toFixed(1)}s（${dur.toFixed(1)}s）`;
+  S[type+'Start']=s; S[type+'End']=e;
+}
+
+// ── Navigation (mobile-first step flow) ──
+const NAV = [
+  {id:null, title:'首页'},
+  {id:'card0', title:'选择模式'},
+  {id:'card1', title:'上传视频'},
+  {id:'card2', title:'选择时间段'},
+  {id:'cardSub', title:'选择主体'},
+  {id:'card3', title:'关键帧'},
+  {id:'cardApi', title:'API Key'},
+  {id:'card4', title:'AI 报告'}
+];
+S.navStep = 0;
+
+function gotoStep(step){
+  const idx=Math.max(0, Math.min(NAV.length-1, step|0));
+  S.navStep=idx;
+  const hero=document.querySelector('.hero');
+  if(hero) hero.style.display = (idx===0)?'block':'none';
+
+  NAV.forEach((v,i)=>{
+    if(!v.id) return;
+    const el=document.getElementById(v.id);
+    if(!el) return;
+    if(i===idx) el.classList.remove('hidden');
+    else el.classList.add('hidden');
+  });
+
+  const back=document.getElementById('navBack');
+  if(back) back.style.display = (idx===0)?'none':'inline-flex';
+  const title=document.getElementById('navTitle');
+  if(title) title.textContent = NAV[idx]?.title||'';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function goPrev(){
+  const s=S.navStep||0;
+  if(s<=0) return;
+  if(S.mode==='quick'){
+    if(s===5) return gotoStep(3);
+    if(s===6) return gotoStep(5);
+    if(s===7) return gotoStep(6);
+  }else{
+    if(s===5) return gotoStep(4);
+    if(s===6) return gotoStep(5);
+    if(s===7) return gotoStep(6);
+  }
+  gotoStep(s-1);
+}
+
+function goStep2(){
+  setStep(2);
+  gotoStep(3);
+  const types=(S.mode==='quick')?['self']:['ref','self'];
+  types.forEach(t=>{
+    const dur=S[t+'Dur']||60;
+    document.getElementById('rs-'+t).max=dur;
+    document.getElementById('re-'+t).max=dur;
+    const end=Math.min(dur,15);
+    document.getElementById('re-'+t).value=end;
+    S[t+'End']=end; updateRange(t);
+  });
+}
+
+function goStep1(){ gotoStep(1); }
+function goStepUpload(){ gotoStep(2); updateNextButtonState(); }
+
+function goStepSubject(){
+  if(S.mode==='quick'){ goStep3(); return; }
+  gotoStep(4);
+  setTimeout(()=>{ scanSubject(); }, 80);
+  const btnTo3=document.getElementById('btnTo3');
+  if(btnTo3) btnTo3.disabled = !(S.subjectConfirmed && S.subjectRefConfirmed);
+}
+
+function goStep3(){
+  if(S.mode==='compare' && !S.subjectConfirmed){
+    alert('请先在上一步确认主体（导师和你），再进入下一步～');
+    return;
+  }
+  setStep(3);
+  gotoStep(5);
+  const row=document.getElementById('framesRow');
+  row.innerHTML='<div style="font-size:12px;color:var(--muted);padding:10px 0">点击「提取关键帧」查看预览</div>';
+  S.frames=[]; S.skelFrames=[];
+  document.getElementById('btn3').disabled=true;
+
+  if(S.mode==='quick'){
+    // Nothing to align; just prepare self video source for frame capture.
+    return;
+  }
+
+  ['ref','self'].forEach(t=>{
+    const src=document.getElementById('v-'+t).src;
+    const v=document.getElementById('va-'+t);
+    v.src=src; v.currentTime=S[t+'Start'];
+    const al=document.getElementById('al-'+t);
+    al.min=S[t+'Start']; al.max=S[t+'End']; al.value=S[t+'Start'];
+    S[t+'Align']=S[t+'Start'];
+    document.getElementById('av-'+t).textContent=S[t+'Start'].toFixed(1)+'s';
+    document.getElementById('vt-'+t).textContent=S[t+'Start'].toFixed(2)+'s';
+  });
+}
+
+function doAlign(type,val){
+  const v=document.getElementById('va-'+type);
+  const t=parseFloat(val);
+  v.currentTime=Math.min(t,v.duration-0.05);
+  S[type+'Align']=t;
+  document.getElementById('av-'+type).textContent=t.toFixed(1)+'s';
+  document.getElementById('vt-'+type).textContent=t.toFixed(2)+'s';
+  S.frames=[]; document.getElementById('btn3').disabled=true;
+}
+
+function extractFrames(){
+  const row=document.getElementById('framesRow');
+  row.innerHTML=''; S.frames=[]; S.skelFrames=[];
+  const N=7;
+  if(S.mode==='quick'){
+    const {w:W,h:H}=canvasSizeFor('self');
+    const span=Math.max(0.1, S.selfEnd-S.selfStart);
+    const interval=span/(N-1);
+    let done=0;
+    for(let i=0;i<N;i++){
+      const wrap=document.createElement('div'); wrap.className='fpair-wrap';
+      const lbl=document.createElement('div'); lbl.className='fpair-lbl';
+      lbl.textContent=`+${(interval*i).toFixed(1)}s`;
+      const pair=document.createElement('div'); pair.className='fpair';
+      wrap.appendChild(lbl); wrap.appendChild(pair); row.appendChild(wrap);
+
+      // Keep DOM structure compatible with existing picker code:
+      // first canvas is a placeholder (reference), second is the user's frame.
+      const placeholder=document.createElement('canvas');
+      placeholder.width=W; placeholder.height=H;
+      placeholder.style.opacity='0.25';
+      pair.appendChild(placeholder);
+
+      const c=document.createElement('canvas'); c.width=W; c.height=H;
+      pair.appendChild(c);
+
+      const t=S.selfStart+(interval*i);
+      capFrame('self', t, c, ()=>{
+        done++;
+        if(done===N) document.getElementById('btn3').disabled=false;
+      });
+    }
+    return;
+  }
+
+  const refSz=canvasSizeFor('ref');
+  const selfSz=canvasSizeFor('self');
+  const span=Math.max(0.1, Math.min(S.refEnd-S.refAlign, S.selfEnd-S.selfAlign));
+  const interval=Math.max(0.35, span/(N-1));
+  let done=0;
+  for(let i=0;i<N;i++){
+    const wrap=document.createElement('div'); wrap.className='fpair-wrap';
+    const lbl=document.createElement('div'); lbl.className='fpair-lbl';
+    lbl.textContent=`+${(interval*i).toFixed(1)}s`;
+    const pair=document.createElement('div'); pair.className='fpair';
+    wrap.appendChild(lbl); wrap.appendChild(pair); row.appendChild(wrap);
+    ['ref','self'].forEach(type=>{
+      const sz = (type==='ref') ? refSz : selfSz;
+      const c=document.createElement('canvas'); c.width=sz.w; c.height=sz.h;
+      pair.appendChild(c);
+      capFrame(type, S[type+'Align']+(interval*i), c, ()=>{
+        done++;
+        if(done===N*2) document.getElementById('btn3').disabled=false;
+      });
+    });
+  }
+}
+
+function capFrame(type,time,canvas,cb){
+  const src=document.getElementById('v-'+type).src;
+  const v=document.createElement('video');
+  v.src=src; v.muted=true; v.style.display='none';
+  document.body.appendChild(v);
+  v.addEventListener('loadedmetadata',()=>{ v.currentTime=Math.min(time,v.duration-0.05); });
+  v.addEventListener('seeked',()=>{
+    const ctx=canvas.getContext('2d');
+    const cw=canvas.width, ch=canvas.height;
+    const vw=v.videoWidth||cw, vh=v.videoHeight||ch;
+    ctx.clearRect(0,0,cw,ch);
+    ctx.fillStyle='#000'; ctx.fillRect(0,0,cw,ch);
+    const s=Math.min(cw/vw, ch/vh);
+    const dw=Math.round(vw*s), dh=Math.round(vh*s);
+    const dx=Math.round((cw-dw)/2), dy=Math.round((ch-dh)/2);
+    ctx.drawImage(v, dx, dy, dw, dh);
+    document.body.removeChild(v); cb&&cb();
+  },{once:true});
+}
+
+function capFrameAsync(type,time,canvas){
+  return new Promise(resolve=>capFrame(type,time,canvas,resolve));
+}
+
+// ── MediaPipe ──
+async function loadMP(){
+  if(S.mpReady) return true;
+  try{
+    // Prefer local vendor files to avoid CDN/GCS access issues.
+    // Works when opened via a local HTTP server (recommended), e.g. `python3 -m http.server 8000`.
+    const {PoseLandmarker,FilesetResolver}=await import('./vendor/mediapipe/tasks-vision/vision_bundle.mjs');
+    const vision=await FilesetResolver.forVisionTasks('./vendor/mediapipe/tasks-vision/wasm');
+    S.mpModel=await PoseLandmarker.createFromOptions(vision,{
+      baseOptions:{modelAssetPath:'./vendor/mediapipe/models/pose_landmarker_lite.task',delegate:'CPU'},
+      runningMode:'IMAGE',numPoses:3
+    });
+    S.mpReady=true; return true;
+  }catch(e){
+    console.warn('MediaPipe load failed:',e);
+    if(location.protocol==='file:'){
+      console.warn('Tip: open via http://localhost instead of file:// to avoid opaque origin issues.');
+    }
+    return false;
+  }
+}
+
+const CONNS=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
+
+function computeBBox(lm){
+  if(!lm || !lm.length) return null;
+  let minX=1, minY=1, maxX=0, maxY=0, count=0, visSum=0;
+  for(const p of lm){
+    const vis=(p.visibility===undefined)?1:(p.visibility||0);
+    if(vis<0.15) continue;
+    minX=Math.min(minX,p.x); minY=Math.min(minY,p.y);
+    maxX=Math.max(maxX,p.x); maxY=Math.max(maxY,p.y);
+    count++; visSum+=vis;
+  }
+  if(count<4) return null;
+  const w=Math.max(0.001,maxX-minX), h=Math.max(0.001,maxY-minY);
+  return {x:minX,y:minY,w,h,cx:minX+w/2,cy:minY+h/2,vis:visSum/count};
+}
+
+function detectCandidates(canvas){
+  if(!S.mpReady||!S.mpModel) return [];
+  try{
+    const lms=S.mpModel.detect(canvas).landmarks||[];
+    return lms.map(lm=>{
+      const bbox=computeBBox(lm);
+      return {landmarks:lm,bbox};
+    }).filter(c=>c.bbox);
+  }catch(e){
+    return [];
+  }
+}
+
+function pickBestCandidate(cands, prevBBox){
+  if(!cands?.length) return null;
+  let best=null, bestScore=-1e9;
+  for(const c of cands){
+    const b=c.bbox;
+    const centerScore=1 - Math.min(1, Math.hypot(b.cx-0.5, b.cy-0.5)/0.75);
+    const sizeScore=Math.min(1, (b.w*b.h) * 6); // heuristic
+    const visScore=b.vis||0;
+    let trackScore=0;
+    if(prevBBox){
+      const dx=b.cx-prevBBox.cx, dy=b.cy-prevBBox.cy;
+      const dist=Math.hypot(dx,dy);
+      trackScore=1 - Math.min(1, dist/0.6);
+    }
+    const score=(prevBBox?0.65*trackScore:0.0) + 0.25*centerScore + 0.15*sizeScore + 0.10*visScore;
+    if(score>bestScore){ bestScore=score; best=c; }
+  }
+  return best;
+}
+
+function renderSubjectOverlay(type){
+  const canvas=document.getElementById(type==='ref'?'subjectCanvasRef':'subjectCanvasSelf');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  // frame already drawn into canvas; overlay boxes
+  const cands = type==='ref' ? (S.subjectRefCandidates||[]) : (S.subjectCandidates||[]);
+  const selected = type==='ref' ? S.subjectRefAnchor : S.subjectSelfAnchor;
+
+  cands.forEach((c,idx)=>{
+    const b=c.bbox;
+    const x=b.x*canvas.width, y=b.y*canvas.height, w=b.w*canvas.width, h=b.h*canvas.height;
+    const isSel=selected && Math.abs(selected.cx-b.cx)<1e-6 && Math.abs(selected.cy-b.cy)<1e-6;
+    ctx.save();
+    ctx.fillStyle=isSel?'rgba(201,168,76,0.22)':'rgba(0,0,0,0.10)';
+    ctx.strokeStyle=isSel?'rgba(201,168,76,0.95)':'rgba(0,0,0,0.22)';
+    ctx.lineWidth=isSel?3:2;
+    ctx.fillRect(x,y,w,h);
+    ctx.strokeRect(x,y,w,h);
+    ctx.fillStyle=isSel?'rgba(201,168,76,0.95)':'rgba(0,0,0,0.35)';
+    ctx.font='12px sans-serif';
+    ctx.fillText('候选'+(idx+1), x+8, y+18);
+    ctx.restore();
+  });
+}
+
+async function scanSubject(){
+  if(S.mode!=='compare') return;
+  const wrap=document.getElementById('subjectWrap');
+  if(!wrap) return;
+  wrap.style.display='block';
+
+  S.subjectConfirmed=false;
+  S.subjectRefConfirmed=false;
+  S.subjectSelfAnchor=null;
+  S.subjectRefAnchor=null;
+  S.subjectCandidates=null;
+  S.subjectRefCandidates=null;
+  const btnSelf=document.getElementById('btnSelfYes');
+  const btnRef=document.getElementById('btnRefYes');
+  const btnTo3=document.getElementById('btnTo3');
+  if(btnSelf) btnSelf.disabled=true;
+  if(btnRef) btnRef.disabled=true;
+  if(btnTo3) btnTo3.disabled=true;
+
+  const hint=document.getElementById('subjectHint');
+  if(hint) hint.textContent='正在识别主体…';
+
+  const mpOk=await loadMP();
+  if(!mpOk){
+    if(hint) hint.textContent='骨骼识别模型加载失败。请用本地 HTTP 打开页面（不要 file://），并检查网络后重试。';
+    return;
+  }
+
+  const canvasRef=document.getElementById('subjectCanvasRef');
+  const canvasSelf=document.getElementById('subjectCanvasSelf');
+  if(!canvasRef || !canvasSelf) return;
+
+  const refSz=canvasSizeFor('ref');
+  const selfSz=canvasSizeFor('self');
+  canvasRef.width=refSz.w; canvasRef.height=refSz.h;
+  canvasSelf.width=selfSz.w; canvasSelf.height=selfSz.h;
+  await Promise.all([
+    capFrameAsync('ref', S.refStart, canvasRef),
+    capFrameAsync('self', S.selfStart, canvasSelf)
+  ]);
+
+  const candsRef=detectCandidates(canvasRef).slice(0,3);
+  const candsSelf=detectCandidates(canvasSelf).slice(0,3);
+  S.subjectRefCandidates=candsRef;
+  S.subjectCandidates=candsSelf;
+
+  if(!candsRef.length || !candsSelf.length){
+    if(hint) hint.textContent='有一段视频里没有识别到清晰完整的人体。请把起点调整到全身入镜、光线更好的瞬间，然后重试。';
+    return;
+  }
+
+  const bestRef=pickBestCandidate(candsRef, null);
+  const bestSelf=pickBestCandidate(candsSelf, null);
+  S.subjectRefAnchor=bestRef?.bbox||candsRef[0].bbox;
+  S.subjectSelfAnchor=bestSelf?.bbox||candsSelf[0].bbox;
+  if(btnRef) btnRef.disabled=false;
+  if(btnSelf) btnSelf.disabled=false;
+  if(hint) hint.textContent='已自动选中导师/你（金色块）。如有误，请分别点击色块切换后再确认。';
+
+  bindSubjectCanvas(canvasRef,'ref');
+  bindSubjectCanvas(canvasSelf,'self');
+  renderSubjectOverlay('ref');
+  renderSubjectOverlay('self');
+}
+
+function bindSubjectCanvas(canvas, type){
+  if(canvas._subjBound) return;
+  canvas.addEventListener('click',(ev)=>{
+    const cands = type==='ref' ? (S.subjectRefCandidates||[]) : (S.subjectCandidates||[]);
+    if(!cands.length) return;
+    const r=canvas.getBoundingClientRect();
+    const px=(ev.clientX-r.left)/r.width*canvas.width;
+    const py=(ev.clientY-r.top)/r.height*canvas.height;
+    for(const c of cands){
+      const b=c.bbox;
+      const x=b.x*canvas.width, y=b.y*canvas.height, w=b.w*canvas.width, h=b.h*canvas.height;
+      if(px>=x && px<=x+w && py>=y && py<=y+h){
+        if(type==='ref') S.subjectRefAnchor=b;
+        else S.subjectSelfAnchor=b;
+        capFrame(type, type==='ref'?S.refStart:S.selfStart, canvas, ()=>renderSubjectOverlay(type));
+        const btn = document.getElementById(type==='ref'?'btnRefYes':'btnSelfYes');
+        if(btn) btn.disabled=false;
+        return;
+      }
+    }
+  });
+  canvas._subjBound=true;
+}
+
+function confirmSubject(type){
+  if(type==='ref'){
+    if(!S.subjectRefAnchor) return;
+    S.subjectRefConfirmed=true;
+  }else{
+    if(!S.subjectSelfAnchor) return;
+    S.subjectConfirmed=true;
+  }
+  const btnTo3=document.getElementById('btnTo3');
+  if(btnTo3) btnTo3.disabled=!(S.subjectConfirmed && S.subjectRefConfirmed);
+  const hint=document.getElementById('subjectHint');
+  if(hint) hint.textContent='已锁定主体。下一步会尽量跟踪同一个人，避免骨骼跑到别人身上。';
+}
+
+function diffScore(lmR,lmS){
+  if(!lmR||!lmS) return {};
+  const d={};
+  [11,12,13,14,15,16,23,24,25,26,27,28].forEach(i=>{
+    if(lmR[i]&&lmS[i]){
+      const dx=lmR[i].x-lmS[i].x, dy=lmR[i].y-lmS[i].y;
+      d[i]=Math.min(1,Math.sqrt(dx*dx+dy*dy)*5);
+    }
+  });
+  return d;
+}
+
+function frameScore(diffs){
+  const v=Object.values(diffs);
+  if(!v.length) return null;
+  return Math.max(20,Math.min(100,Math.round((1-v.reduce((a,b)=>a+b,0)/v.length)*100)));
+}
+
+async function buildSkelFrames(){
+  const canvases=Array.from(document.querySelectorAll('#framesRow .fpair canvas'));
+  const N=Math.min(7, Math.floor(canvases.length/2)); S.frames=[]; S.skelFrames=[];
+  let detectedPairs=0;
+  let prevSelfBBox = S.subjectSelfAnchor || null;
+  let prevRefBBox = S.subjectRefAnchor || null;
+  for(let i=0;i<N;i++){
+    const cR=canvases[i*2], cS=canvases[i*2+1];
+    if(!cR||!cS) continue;
+    const candR=detectCandidates(cR);
+    const pickR=pickBestCandidate(candR, prevRefBBox);
+    const lmR=pickR?.landmarks||null;
+    if(pickR?.bbox) prevRefBBox = pickR.bbox;
+
+    const candS=detectCandidates(cS);
+    const pickS=pickBestCandidate(candS, prevSelfBBox);
+    const lmS=pickS?.landmarks||null;
+    if(pickS?.bbox) prevSelfBBox = pickS.bbox;
+    const diffs=diffScore(lmR,lmS);
+    const sc=frameScore(diffs);
+    if(sc!==null) detectedPairs++;
+    const skelC=document.createElement('canvas');
+    skelC.width=cR.width*2+4; skelC.height=cR.height;
+    const ctx=skelC.getContext('2d');
+    ctx.drawImage(cR,0,0); ctx.drawImage(cS,cR.width+4,0);
+    if(lmR) drawSkel(ctx,lmR,'#378ADF',null,true,0,cR.width,cR.height);
+    if(lmS) drawSkel(ctx,lmS,'#E8A030',diffs,false,cR.width+4,cS.width,cS.height);
+    S.skelFrames.push({canvas:skelC,score:sc,diffs,detected:sc!==null});
+    S.frames.push(cS.toDataURL('image/jpeg',0.7).split(',')[1]);
+  }
+  // Keep all frames visible; sort by "more worth watching" first (lower score = larger diff).
+  S.diffOrder=[...Array(S.skelFrames.length).keys()].sort((a,b)=>{
+    const sa=S.skelFrames[a]?.score;
+    const sb=S.skelFrames[b]?.score;
+    if(sa===null && sb===null) return 0;
+    if(sa===null) return 1;
+    if(sb===null) return -1;
+    return sa - sb;
+  });
+  const bestIdx = [...Array(S.skelFrames.length).keys()].filter(i=>S.skelFrames[i]?.score!==null).sort((a,b)=>S.skelFrames[b].score-S.skelFrames[a].score)[0];
+  S.bestFrameIdx= (bestIdx!==undefined)?bestIdx:0;
+  return detectedPairs;
+}
+
+function drawSkel(ctx,lm,baseColor,diffs,isRef,offX,vw,vh){
+  CONNS.forEach(([a,b])=>{
+    if(!lm[a]||!lm[b]) return;
+    ctx.beginPath();
+    ctx.moveTo(lm[a].x*vw+offX, lm[a].y*vh);
+    ctx.lineTo(lm[b].x*vw+offX, lm[b].y*vh);
+    ctx.strokeStyle=baseColor; ctx.lineWidth=isRef?1.5:2;
+    ctx.globalAlpha=0.85; ctx.stroke(); ctx.globalAlpha=1;
+  });
+  lm.forEach((p,idx)=>{
+    if((p.visibility||1)<0.3) return;
+    const dv=diffs?diffs[idx]||0:0;
+    const jc=diffs?(dv>0.5?'#E24B4A':dv>0.25?'#EF9F27':'#4CAF50'):baseColor;
+    ctx.beginPath();
+    ctx.arc(p.x*vw+offX, p.y*vh, isRef?3:3.5, 0, Math.PI*2);
+    ctx.fillStyle=jc; ctx.globalAlpha=0.9; ctx.fill(); ctx.globalAlpha=1;
+  });
+}
+
+// ── MAIN FLOW ──
+function goStepApi(){
+  gotoStep(6);
+  updateProviderHint();
+  checkKey();
+}
+
+async function goStep4(){
+  const key=document.getElementById('apiKey').value.trim();
+  if(!key){ alert('请先填写 API Key！'); return; }
+  S.lastKey=key;
+  setStep(4);
+  gotoStep(7);
+  await runAnalysis(key);
+}
+
+async function retryAnalysis(){
+  const key=document.getElementById('apiKey').value.trim()||S.lastKey;
+  if(!key){ alert('请先填入 API Key！'); return; }
+  hideErr();
+  document.getElementById('loadWrap').style.display='block';
+  document.getElementById('resultWrap').style.display='none';
+  await runAnalysis(key);
+}
+
+function goBackAlign(){
+  gotoStep(5);
+}
+
+async function runAnalysis(key){
+  document.getElementById('loadWrap').style.display='block';
+  document.getElementById('resultWrap').style.display='none';
+  hideErr();
+
+  prepareLoadingForMode();
+
+  if(S.mode==='compare'){
+    setLS(1,'active');
+    const backendOk = await loadCompareKeyframesFromBackend();
+    if(!backendOk){
+      // Fall back to in-browser MediaPipe if backend is not running.
+      const mpOk=await loadMP();
+      if(!mpOk){
+        setLS(1,'fail');
+        throw new Error('骨骼识别模型加载失败。请先启动本地骨骼服务（推荐），或检查网络/打开方式后重试。');
+      }
+    }
+    setLS(1,'done');
+
+    setLS(2,'active');
+    const detectedPairs=await buildSkelFrames();
+    if(detectedPairs<=0){
+      setLS(2,'fail');
+      throw new Error('这一段视频里没有识别到清晰完整的人体姿态。请重新选择一段全身入镜、光线更好、遮挡更少的视频片段。');
+    }
+    setLS(2,'done');
+
+    setLS(3,'active');
+    await new Promise(r=>setTimeout(r,250));
+    setLS(3,'done');
+  }else{
+    setLS(1,'active');
+    S.frames=collectUserFramesFromRow();
+    if(!S.frames.length){
+      setLS(1,'fail');
+      throw new Error('还没有提取到关键帧。请先点击「提取关键帧」，再开始 AI 分析。');
+    }
+    setLS(1,'done');
+  }
+
+  setLS(4,'active');
+  try{
+    const provider=document.getElementById('aiProvider').value;
+    const res=await callAI(provider, key);
+    S.aiResult=res;
+    setLS(4,'done');
+    await new Promise(r=>setTimeout(r,200));
+    showResult(res);
+  }catch(e){
+    setLS(4,'fail');
+    document.getElementById('loadWrap').style.display='none';
+    showErr(e.message||'未知错误，请检查 API Key 和网络连接');
+  }
+}
+
+function setLS(n,state){ document.getElementById('ls'+n).className='ls '+state; }
+function showErr(msg){
+  const b=document.getElementById('errBox');
+  b.classList.add('show');
+  document.getElementById('errMsg').textContent=msg;
+
+  const details=document.getElementById('rawDetails');
+  const rawEl=document.getElementById('rawText');
+  const raw=(S.lastRawAIText||'').toString();
+  if(details && rawEl){
+    if(raw.trim()){
+      details.style.display='block';
+      rawEl.textContent=raw.length>20000 ? (raw.slice(0,20000)+'\n\n…（已截断，内容太长）') : raw;
+    }else{
+      details.style.display='none';
+      rawEl.textContent='';
+    }
+  }
+}
+function hideErr(){ document.getElementById('errBox').classList.remove('show'); }
+
+async function copyRaw(){
+  const text=(document.getElementById('rawText')?.textContent||'').trim();
+  if(!text){ alert('没有可复制的原始返回。'); return; }
+  try{
+    await navigator.clipboard.writeText(text);
+    alert('已复制原始返回～');
+  }catch(_){
+    const ta=document.createElement('textarea');
+    ta.value=text;
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand('copy'); alert('已复制原始返回～'); }
+    catch(e){ alert('复制失败，请手动选择复制。'); }
+    document.body.removeChild(ta);
+  }
+}
+
+function prepareLoadingForMode(){
+  const isQuick=S.mode==='quick';
+  const ls1=document.getElementById('ls1');
+  const ls2=document.getElementById('ls2');
+  const ls3=document.getElementById('ls3');
+  const ls4=document.getElementById('ls4');
+  if(isQuick){
+    if(ls1){ ls1.style.display='list-item'; ls1.textContent='读取关键帧画面'; }
+    if(ls2) ls2.style.display='none';
+    if(ls3) ls3.style.display='none';
+    if(ls4){ ls4.style.display='list-item'; ls4.textContent='AI 生成夸夸报告'; }
+  }else{
+    if(ls1){ ls1.style.display='list-item'; ls1.textContent='加载 MediaPipe 骨骼识别模型'; }
+    if(ls2){ ls2.style.display='list-item'; ls2.textContent='提取关键帧骨骼关键点'; }
+    if(ls3){ ls3.style.display='list-item'; ls3.textContent='生成动作观察参考'; }
+    if(ls4){ ls4.style.display='list-item'; ls4.textContent='AI 生成鼓励建议'; }
+  }
+}
+
+function collectUserFramesFromRow(){
+  const canvases=Array.from(document.querySelectorAll('#framesRow .fpair canvas'));
+  const out=[];
+  for(let i=0;i<Math.floor(canvases.length/2);i++){
+    const c=canvases[i*2+1];
+    if(!c) continue;
+    const b64=c.toDataURL('image/jpeg',0.9).split(',')[1];
+    if(b64) out.push(b64);
+  }
+  return out;
+}
+
+function collectFramePairsFromRow(){
+  const canvases=Array.from(document.querySelectorAll('#framesRow .fpair canvas'));
+  const pairs=[];
+  for(let i=0;i<Math.floor(canvases.length/2);i++){
+    const cR=canvases[i*2];
+    const cS=canvases[i*2+1];
+    if(!cR || !cS) continue;
+    const ref=cR.toDataURL('image/jpeg',0.9).split(',')[1];
+    const self=cS.toDataURL('image/jpeg',0.9).split(',')[1];
+    pairs.push({ref,self});
+  }
+  return pairs;
+}
+
+async function loadCompareKeyframesFromBackend(){
+  try{
+    const health = await fetch(LOCAL_BACKEND + '/health').catch(()=>null);
+    if(!health || !health.ok) return false;
+
+    if(!S.refFile || !S.selfFile) return false;
+    const form = new FormData();
+    form.append('ref_video', S.refFile, S.refFile.name || 'ref.mp4');
+    form.append('self_video', S.selfFile, S.selfFile.name || 'self.mp4');
+    form.append('ref_start', String(S.refStart||0));
+    form.append('ref_end', String(S.refEnd||15));
+    form.append('self_start', String(S.selfStart||0));
+    form.append('self_end', String(S.selfEnd||15));
+
+    const resp = await fetch(LOCAL_BACKEND + '/api/compare/keyframes', { method:'POST', body: form });
+    if(!resp.ok) return false;
+    const data = await resp.json();
+    if(!data?.ok) return false;
+
+    // Render overlays into framesRow canvases so downstream logic can continue unchanged.
+    const row=document.getElementById('framesRow');
+    row.innerHTML=''; S.frames=[]; S.skelFrames=[];
+    const N = Math.min(7, Math.min(data.ref?.length||0, data.self?.length||0) || 7);
+    let done=0;
+    for(let i=0;i<N;i++){
+      const wrap=document.createElement('div'); wrap.className='fpair-wrap';
+      const lbl=document.createElement('div'); lbl.className='fpair-lbl';
+      const tRef = (data.ref?.[i]?.t);
+      const tSelf = (data.self?.[i]?.t);
+      const t = (typeof tSelf==='number') ? tSelf : (typeof tRef==='number'?tRef:null);
+      lbl.textContent = (typeof t==='number') ? ('t=' + t.toFixed(1) + 's') : (`#${i+1}`);
+      const pair=document.createElement('div'); pair.className='fpair';
+      wrap.appendChild(lbl); wrap.appendChild(pair); row.appendChild(wrap);
+
+      const imgR=new Image();
+      const imgS=new Image();
+      const cR=document.createElement('canvas'); cR.width=640; cR.height=360;
+      const cS=document.createElement('canvas'); cS.width=640; cS.height=360;
+      pair.appendChild(cR); pair.appendChild(cS);
+      imgR.onload=()=>{
+        cR.width=imgR.naturalWidth||640; cR.height=imgR.naturalHeight||360;
+        cR.getContext('2d').drawImage(imgR,0,0);
+        done++; if(done===N*2) document.getElementById('btn3').disabled=false;
+      };
+      imgS.onload=()=>{
+        cS.width=imgS.naturalWidth||640; cS.height=imgS.naturalHeight||360;
+        cS.getContext('2d').drawImage(imgS,0,0);
+        done++; if(done===N*2) document.getElementById('btn3').disabled=false;
+      };
+      imgR.src='data:image/jpeg;base64,' + (data.ref?.[i]?.image_b64||'');
+      imgS.src='data:image/jpeg;base64,' + (data.self?.[i]?.image_b64||'');
+    }
+
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+// ── AI CALLS ──
+async function callAI(provider, key){
+  if(S.mode==='quick' && provider==='deepseek'){
+    throw new Error('快速夸夸模式建议选择「Gemini 视觉教练」，因为需要读取关键帧图片。请在右上角切换模型后再试。');
+  }
+  if(provider==='deepseek') return await callDeepSeek(key);
+  if(provider==='gemini') return await callGemini(key);
+  throw new Error('未知 AI 提供商');
+}
+
+// NOTE: This is a hackathon/demo style front-end key input.
+// Production should proxy requests via backend; do NOT expose API keys in browser.
+function buildQuickPrompt(){
+  return `你是一个温柔、真诚、很会鼓励人的「妈妈舞蹈陪练」。
+请根据用户上传的跳舞视频关键帧，生成一份鼓励式舞蹈反馈。
+
+要求：
+1) 先夸夸，再建议；不羞辱、不审判、不制造挫败感。
+2) 不要假装自己能做专业裁判级判断；不要用“严格打分/标准不标准”的口吻。
+3) 可以从投入感、节奏感、动作舒展度、动作幅度、情绪表达、舞台感染力等角度做观察。
+4) 建议必须轻量、具体、可执行（一次只练一个小目标）。
+5) 面向妈妈用户，语言要温柔、有情绪价值，但不要油腻。
+6) 返回严格 JSON，不要返回代码块，不要返回多余解释。
+7) 你正在点评的是“跳舞练习”，禁止出现与演讲/听众/发言/台词相关的词（如“演讲”“听众”“语速”“发言”）。
+7) 为了避免输出被截断，请严格控制长度：
+   - energyTitle ≤ 14 个字
+   - overallPraise ≤ 120 个字
+   - bestMoments 每条 ≤ 20 个字
+   - gentleSuggestions 最多 2 条；每条 body ≤ 90 个字；tip ≤ 30 个字
+   - nextPracticeGoal ≤ 26 个字
+   - shareCaption ≤ 120 个字
+
+请只返回如下 JSON：
+{
+  "danceIndex": 0-100,
+  "upperEase": 0-100,
+  "stepStability": 0-100,
+  "energyTitle": "一句鼓励标题",
+  "overallPraise": "整体夸夸（1-2段）",
+  "bestMoments": ["最有魅力的瞬间1","瞬间2","瞬间3"],
+  "danceTemperament": "一句话形容你的舞蹈气质",
+  "gentleSuggestions": [{"title":"建议标题","body":"温柔具体的建议","tip":"下一次怎么练"}],
+  "nextPracticeGoal": "下一次只练一个小目标",
+  "shareCaption": "适合朋友圈/小红书的分享文案（1-2段）",
+  "bestFrame": 0-6
+}`;
+}
+
+function buildComparePrompt(){
+  return `你是一个温柔、具体、可执行的「妈妈舞蹈陪练教练」。
+你要根据“导师(参考) vs 学员(我的)”的关键帧骨骼差异指标，给出鼓励式反馈：先夸夸，再建议。
+你不是考试裁判，只提供练习方向与动作感觉提示。
+
+注意：
+1) 如果骨骼数据不足/不完整，请明确说明“数据不足”，不要假装精准分析；
+2) 仍然要给出鼓励式反馈：先夸夸，再建议；
+3) 建议要轻量、具体、可执行。
+4) 你正在点评的是“跳舞练习”，禁止出现与演讲/听众/发言/台词相关的词（如“演讲”“听众”“语速”“发言”）。
+5) 为了避免输出被截断，请控制长度：praise/improve 各最多 2 条；每条 body ≤ 90 个字；tip ≤ 30 个字；shareCaption ≤ 120 个字。
+
+你会收到每帧的指标，指标含义：
+- amp_diff：动作幅度差（0~1，越大表示学员幅度与导师差距越大）
+- amp_dir：幅度方向（"smaller"=学员幅度偏小；"larger"=学员幅度偏大；"unknown"）
+- upper_diff：上身差异（0~1）
+- lower_diff：下身/步伐差异（0~1）
+- center_drift：重心漂移/稳定性差（0~1）
+- joint_hotspots：差异最大的关节列表
+
+阈值规则（必须遵守，用来决定“再用力一点”还是“收一收”）：
+1) 幅度建议：
+- 如果 amp_dir="smaller" 且 amp_diff >= 0.35：建议“动作幅度可以再打开一点/再用力一点/延伸更远一点”
+- 如果 amp_dir="larger" 且 amp_diff >= 0.35：建议“动作幅度可以收一收/更克制一点/别甩太猛”
+- 如果 amp_diff < 0.35：不要强调幅度问题，换成稳定/节奏/呼吸等建议
+
+2) 稳定性建议：
+- 如果 center_drift >= 0.35：建议“重心先稳住再走”“膝踝对齐”“脚下踩实”
+- 如果 lower_diff >= 0.40：优先给“下肢/步伐”建议
+- 如果 upper_diff >= 0.40：优先给“上肢/肩颈/手臂线条”建议
+
+3) 建议必须非常具体：
+每条建议都要包含：部位 + 怎么做 + 怎么感觉 + 一个 20~30 秒可做的小练习（对镜/原地即可）。
+
+返回严格 JSON（不要代码块/不要多余文字）：
+{
+  "overall": 0-100,
+  "upper": 0-100,
+  "lower": 0-100,
+  "praise": [{"title":"标题","body":"具体夸夸","tip":"练习贴士（可选）"}],
+  "improve": [{"title":"标题","body":"温柔建议","tip":"练习方法"}],
+  "bestFrame": 0-6,
+  "frameScores": [7个0-100数字],
+  "shareCaption": "适合朋友圈/小红书的分享文案（1-2段）"
+}`;
+}
+
+function getSystemPrompt(){
+  return (S.mode==='quick') ? buildQuickPrompt() : buildComparePrompt();
+}
+
+
+
+function buildSkelReport(){
+  const JOINT_NAMES={11:'左肩',12:'右肩',13:'左肘',14:'右肘',15:'左腕',16:'右腕',23:'左髋',24:'右髋',25:'左膝',26:'右膝',27:'左踝',28:'右踝'};
+  const lines=[];
+  S.skelFrames.forEach((sf,i)=>{
+    const parts=[];
+    Object.entries(sf.diffs).forEach(([idx,val])=>{
+      const name=JOINT_NAMES[idx]||`关节${idx}`;
+      const level=val>0.5?'差异较大':val>0.25?'差异中等':'基本一致';
+      parts.push(`${name}${level}（偏差${(val*100).toFixed(0)}%）`);
+    });
+    const scoreTxt=(sf.score===null||sf.score===undefined)?'未识别到完整人体':'观察指数'+sf.score;
+    lines.push(`第${i+1}帧（${scoreTxt}）：${parts.join('、')||'骨骼数据不足'}`);
+  });
+  return lines.join('\n');
+}
+
+async function callDeepSeek(key){
+  const skelReport=buildSkelReport();
+  const userMsg=`以下是 MediaPipe 骨骼识别对 5 个关键帧的分析结果（导师参考 vs 学员我的）：
+
+${skelReport}
+
+请根据以上数据，用温柔鼓励的语气给这位妈妈学员提供反馈。`;
+
+  const resp=await fetch('https://api.deepseek.com/v1/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
+    body:JSON.stringify({
+      model:'deepseek-chat',
+      messages:[
+        {role:'system',content:getSystemPrompt()},
+        {role:'user',content:userMsg}
+      ],
+      max_tokens:1200,
+      temperature:0.2
+    })
+  });
+  if(!resp.ok){
+    const err=await resp.json().catch(()=>({}));
+    const msg=err?.error?.message||resp.statusText;
+    if(resp.status===401) throw new Error(`DeepSeek Key 无效或已过期（401），请检查后重试。`);
+    if(resp.status===429) throw new Error(`DeepSeek 请求太频繁（429），请等几秒后重试。`);
+    throw new Error(`DeepSeek API 错误 ${resp.status}: ${msg}`);
+  }
+  const data=await resp.json();
+  const text=data.choices?.[0]?.message?.content||'';
+  S.lastRawAIText=text;
+  try{
+    return parseModelJson(text);
+  }catch(e){
+    const repaired = await callDeepSeekForJsonRepair(key, text).catch(()=>null);
+    if(repaired) return repaired;
+    throw e;
+  }
+}
+
+async function callDeepSeekForJsonRepair(key, rawText){
+  const resp=await fetch('https://api.deepseek.com/v1/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
+    body:JSON.stringify({
+      model:'deepseek-chat',
+      messages:[
+        {role:'system',content:'你是一个JSON修复器。给你一段不完整或不合法的JSON文本，请在尽量不改变已给内容含义的前提下补全/修复为合法JSON，并且只输出JSON，不要输出任何解释或代码块。'},
+        {role:'user',content:rawText}
+      ],
+      max_tokens:900,
+      temperature:0
+    })
+  });
+  if(!resp.ok) return null;
+  const data=await resp.json();
+  const text=data.choices?.[0]?.message?.content||'';
+  S.lastRawAIText = (S.lastRawAIText||'') + '\\n\\n---\\n[deepseek_repair_raw]\\n' + text;
+  return parseModelJson(text);
+}
+
+async function callGemini(key){
+  const parts=[{text:getSystemPrompt()}];
+  if(S.mode==='compare'){
+    const pairs=collectFramePairsFromRow();
+    for(let i=0;i<Math.min(pairs.length,7);i++){
+      parts.push({text:`第${i+1}组（左：参考视频，右：你的视频）`});
+      if(pairs[i].ref) parts.push({inlineData:{mimeType:'image/jpeg',data:pairs[i].ref}});
+      if(pairs[i].self) parts.push({inlineData:{mimeType:'image/jpeg',data:pairs[i].self}});
+    }
+  }else{
+    for(let i=0;i<Math.min(S.frames.length,7);i++){
+      parts.push({text:`第${i+1}帧（你的关键帧）`});
+      parts.push({inlineData:{mimeType:'image/jpeg',data:S.frames[i]}});
+    }
+  }
+
+  const bodyJsonMode={
+    contents:[{parts}],
+    generationConfig:{
+      temperature:0.2,
+      maxOutputTokens:1800,
+      responseMimeType:'application/json'
+    }
+  };
+  const bodyPlain={
+    contents:[{parts}],
+    generationConfig:{
+      temperature:0.2,
+      maxOutputTokens:1800
+    }
+  };
+
+  // Prefer JSON mode when available; retry without it if unsupported.
+  let resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(bodyJsonMode)
+  });
+  if(!resp.ok){
+    const maybeText=await resp.text().catch(()=>'');
+    if(resp.status===400 && /json|mime|schema|mode/i.test(maybeText)){
+      resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(bodyPlain)
+      });
+    }
+  }
+
+  if(!resp.ok){
+    const err=await resp.json().catch(()=>({}));
+    const msg=err?.error?.message||resp.statusText;
+    if(resp.status===401) throw new Error(`Gemini Key 无效或已过期（401），请检查后重试。`);
+    if(resp.status===429) throw new Error(`Gemini 请求太频繁（429），请等 30 秒后重试。`);
+    throw new Error(`Gemini API 错误 ${resp.status}: ${msg}`);
+  }
+  const data=await resp.json();
+  const text=(data.candidates?.[0]?.content?.parts||[]).map(p=>typeof p?.text==='string'?p.text:'').join('\n');
+  S.lastRawAIText=text;
+  try{
+    return parseModelJson(text);
+  }catch(e){
+    // Attempt one repair round when output is truncated/invalid.
+    const repaired=await callGeminiForJsonRepair(key, text).catch(()=>null);
+    if(repaired) return repaired;
+    throw e;
+  }
+}
+
+function parseModelJson(text){
+  if(!text) throw new Error('AI 返回为空，无法解析。');
+  const noFences=text.replace(/```[a-zA-Z]*\s*|\s*```/g,'').trim();
+  const sanitized = sanitizeJsonLike(noFences);
+  try{
+    return JSON.parse(sanitized);
+  }catch(_){
+    const first=sanitized.indexOf('{');
+    const last=sanitized.lastIndexOf('}');
+    if(first===-1||last===-1||last<=first){
+      const preview=sanitized.length>240?(sanitized.slice(0,240)+'…'):sanitized;
+      throw new Error('AI 返回内容格式错误，无法解析为 JSON。preview='+preview);
+    }
+    const sliced=sanitized.slice(first,last+1).trim();
+    try{
+      return JSON.parse(sanitizeJsonLike(sliced));
+    }catch(e){
+      const preview=sliced.length>240?(sliced.slice(0,240)+'…'):sliced;
+      throw new Error('JSON 解析失败：'+e.message+' | preview='+preview);
+    }
+  }
+}
+
+function sanitizeJsonLike(text){
+  let t=(text||'').trim();
+  t=t.replace(/^\uFEFF/, '');
+  t=t.replace(/[“”]/g,'"').replace(/[‘’]/g,"'");
+  t=t.replace(/,\s*([}\]])/g, '$1');
+  return t;
+}
+
+async function callGeminiForJsonRepair(key, rawText){
+  const parts=[{
+    text:`你是一个 JSON 修复器。下面是一段不完整或不合法的 JSON（可能被截断）。
+请你在“尽量不改变已有内容含义”的前提下，将其补全为一个合法的 JSON 对象，并且只输出 JSON，不要输出任何额外文字或代码块。
+
+重要：请补全为“完整 schema”，不要只输出半截字段。
+如果缺少字段或数组内容，请根据已有上下文合理补齐（可简短），但必须包含这些字段：
+- overall, upper, lower（数字）
+- praise（数组，至少2条，每条含 title/body，tip可选）
+- improve（数组，至少2条，每条含 title/body/tip）
+- shareCaption（字符串）
+- bestFrame（0-6整数）
+
+不合法 JSON 如下：
+${rawText}`
+  }];
+
+  const body={
+    contents:[{parts}],
+    generationConfig:{
+      temperature:0,
+      maxOutputTokens:1200,
+      responseMimeType:'application/json'
+    }
+  };
+
+  let resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  if(!resp.ok){
+    // Retry without JSON mode if unsupported
+    const maybe=await resp.text().catch(()=>'');
+    if(resp.status===400 && /json|mime|schema|mode/i.test(maybe)){
+      body.generationConfig.responseMimeType=undefined;
+      resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(body)
+      });
+    }
+  }
+  if(!resp.ok) return null;
+  const data=await resp.json();
+  const text=(data.candidates?.[0]?.content?.parts||[]).map(p=>typeof p?.text==='string'?p.text:'').join('\n');
+  // Keep the raw repair output visible in debug
+  S.lastRawAIText = (S.lastRawAIText||'') + '\n\n---\n[repair_raw]\n' + text;
+  return parseModelJson(text);
+}
+
+// ── RENDER ──
+function normalizeAIResult(raw){
+  if(!raw || typeof raw!=='object') return raw;
+
+  // Quick mode schema → normalize to compare schema fields used by UI/export.
+  if(raw.danceIndex!==undefined){
+    const praise=[];
+    if(typeof raw.energyTitle==='string' && raw.energyTitle.trim()){
+      praise.push({title:raw.energyTitle.trim(),body:(raw.overallPraise||'').toString().trim(),tip:''});
+    }else if(raw.overallPraise){
+      praise.push({title:'今天的你很棒',body:raw.overallPraise.toString().trim(),tip:''});
+    }
+    (raw.bestMoments||[]).slice(0,3).forEach((m,i)=>{
+      if(typeof m==='string' && m.trim()){
+        praise.push({title:`闪光点 ${i+1}`,body:m.trim(),tip:''});
+      }
+    });
+
+    const improve=(raw.gentleSuggestions||[]).map(s=>({
+      title:(s?.title||'小小建议').toString(),
+      body:(s?.body||'').toString(),
+      tip:(s?.tip||'').toString()
+    }));
+
+    if(raw.nextPracticeGoal){
+      improve.push({title:'下一次小目标',body:raw.nextPracticeGoal.toString(),tip:''});
+    }
+
+    return {
+      overall: Math.round(Number(raw.danceIndex)||0),
+      upper: Math.round(Number(raw.upperEase)||0),
+      lower: Math.round(Number(raw.stepStability)||0),
+      praise,
+      improve,
+      bestFrame: raw.bestFrame,
+      frameScores: null,
+      shareCaption: (raw.shareCaption||'').toString(),
+      danceTemperament: (raw.danceTemperament||'').toString()
+    };
+  }
+
+  return raw;
+}
+
+function ensureCompareSchema(data){
+  if(!data || typeof data!=='object') return data;
+  const out = {...data};
+  if(!Number.isFinite(out.overall)) out.overall = 0;
+  if(!Number.isFinite(out.upper)) out.upper = 0;
+  if(!Number.isFinite(out.lower)) out.lower = 0;
+  if(!Array.isArray(out.praise)) out.praise = [];
+  if(!Array.isArray(out.improve)) out.improve = [];
+  if(typeof out.shareCaption !== 'string') out.shareCaption = '';
+
+  // If model returned a truncated "亲..." etc, make the UX resilient with defaults.
+  if(out.praise.length === 0){
+    out.praise = [{title:'今天的你很认真', body:'看得出来你跳得很投入～先给自己一个大大的肯定！', tip:'先保持这个状态'}];
+  }
+  if(out.improve.length === 0){
+    out.improve = [{title:'一个小目标就够', body:'下一次只挑一个动作慢慢练：重心稳住、动作做完整，不求快。', tip:'先慢后快'}];
+  }
+  if(!out.shareCaption.trim()){
+    out.shareCaption = '今天又认真跳了一支舞。不是为了多标准，而是为了更开心一点。继续加油呀～';
+  }
+  if(out.bestFrame === undefined) out.bestFrame = 0;
+  return out;
+}
+
+function showResult(data){
+  data=normalizeAIResult(data);
+  if(S.mode==='compare') data = ensureCompareSchema(data);
+  S.aiResult=data;
+
+  document.getElementById('loadWrap').style.display='none';
+  document.getElementById('resultWrap').style.display='block';
+  document.getElementById('s-all').textContent=data.overall;
+  document.getElementById('s-up').textContent=data.upper;
+  document.getElementById('s-dn').textContent=data.lower;
+  document.getElementById('shareText').textContent=data.shareCaption||'';
+
+  const ovWrap=document.getElementById('overlayVideoWrap');
+  if(ovWrap) ovWrap.style.display=(S.mode==='compare')?'block':'none';
+
+  if(data.frameScores){
+    data.frameScores.forEach((sc,i)=>{ if(S.skelFrames[i]) S.skelFrames[i].score=Number.isFinite(sc)?sc:null; });
+    S.diffOrder=[...Array(S.skelFrames.length).keys()].sort((a,b)=>{
+      const sa=S.skelFrames[a]?.score;
+      const sb=S.skelFrames[b]?.score;
+      if(sa===null && sb===null) return 0;
+      if(sa===null) return 1;
+      if(sb===null) return -1;
+      return sa - sb;
+    });
+  }
+  if(data.bestFrame!==undefined) S.bestFrameIdx=data.bestFrame;
+
+  const dg=document.getElementById('diffGrid'); dg.innerHTML='';
+  (S.diffOrder||[]).forEach(fi=>{
+    const sf=S.skelFrames[fi]; if(!sf) return;
+    const item=document.createElement('div'); item.className='diff-item';
+    const lbl=document.createElement('div'); lbl.className='diff-item-label';
+    lbl.textContent=`帧${fi+1} · ${sf.score===null?'未识别到完整人体':('观察指数 '+sf.score)}`;
+    const cw=document.createElement('div'); cw.className='diff-cwrap';
+    const c=document.createElement('canvas'); c.width=sf.canvas.width; c.height=sf.canvas.height; c.style.width='100%';
+    c.getContext('2d').drawImage(sf.canvas,0,0);
+    cw.appendChild(c);
+    cw.onclick=()=>{ S.bestFrameIdx=fi; renderBestPicker(); openFrame(fi); };
+    const bar=document.createElement('div'); bar.className='diff-bar';
+    const p=(sf.score||0)/100;
+    const sc=sf.score||0;
+    bar.style.background=`linear-gradient(to right,${p<.6?'#E24B4A':p<.8?'#EF9F27':'#4CAF50'} ${sc}%,var(--bg2) ${sc}%)`;
+    item.appendChild(lbl); item.appendChild(cw); item.appendChild(bar);
+    dg.appendChild(item);
+  });
+
+  renderFB('praiseList',data.praise,'fb-praise','🌟',false);
+  renderFB('improveList',data.improve,'fb-improve','🌱',true);
+  renderBestPicker();
+  setStep(5);
+}
+
+async function generateOverlayVideo(){
+  if(!S.refFile || !S.selfFile){
+    alert('请先上传参考视频和我的视频～');
+    return;
+  }
+  const v=document.getElementById('overlayVideo');
+  if(v){ v.style.display='none'; v.removeAttribute('src'); v.load(); }
+
+  const form = new FormData();
+  form.append('ref_video', S.refFile, S.refFile.name || 'ref.mp4');
+  form.append('self_video', S.selfFile, S.selfFile.name || 'self.mp4');
+  form.append('ref_start', String(S.refStart||0));
+  form.append('ref_end', String(S.refEnd||15));
+  form.append('self_start', String(S.selfStart||0));
+  form.append('self_end', String(S.selfEnd||15));
+
+  try{
+    const resp = await fetch(LOCAL_BACKEND + '/api/compare/overlay_video', { method:'POST', body: form });
+    if(!resp.ok) throw new Error('生成失败（'+resp.status+'）');
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    if(v){
+      v.src=url;
+      v.style.display='block';
+      v.play().catch(()=>{});
+    }
+  }catch(e){
+    alert('生成对比视频失败：请确认本地骨骼服务已启动（localhost:8787）。\\n' + (e?.message||''));
+  }
+}
+
+function renderFB(id,items,cls,icon,isImp){
+  const ul=document.getElementById(id); ul.innerHTML='';
+  (items||[]).forEach(p=>{
+    const li=document.createElement('li'); li.className='fb-item';
+    li.innerHTML=`<div class="fb-dot ${cls}">${icon}</div>
+    <div><div class="fb-title">${p.title}</div>
+    <div class="fb-body">${p.body}</div>
+    ${p.tip?`<span class="fb-tip${isImp?' imp':''}">${isImp?'🎯':'💡'} ${p.tip}</span>`:''}</div>`;
+    ul.appendChild(li);
+  });
+}
+
+function renderBestPicker(){
+  const row=document.getElementById('bestFramesRow'); row.innerHTML='';
+  const canvases=Array.from(document.querySelectorAll('#framesRow .fpair canvas'));
+  const N=Math.ceil(canvases.length/2);
+  for(let i=0;i<N;i++){
+    const srcC=canvases[i*2+1]; if(!srcC) continue;
+    const wrap=document.createElement('div');
+    wrap.className='bfthumb'+(i===S.bestFrameIdx?' sel-bf':'');
+    const c=document.createElement('canvas'); c.width=120; c.height=78;
+    c.getContext('2d').drawImage(srcC,0,0,120,78);
+    wrap.appendChild(c);
+    if(i===S.bestFrameIdx){
+      const b=document.createElement('div'); b.className='ai-badge'; b.textContent='AI推荐';
+      wrap.appendChild(b);
+    }
+    wrap.onclick=()=>{ S.bestFrameIdx=i; renderBestPicker(); };
+    row.appendChild(wrap);
+  }
+}
+
+function selTmpl(el,name){
+  document.querySelectorAll('.tmpl-btn').forEach(b=>b.classList.remove('sel-tmpl'));
+  el.classList.add('sel-tmpl'); S.template=name;
+}
+
+const TMPL={
+  elegant:{bg:'#1A1410',accent:'#C9A84C',text:'#F5EDD6',sub:'#9A8F85',ftBg:'#C9A84C',ftText:'#1A1410'},
+  bloom:{bg:'#FEF5F6',accent:'#C0515A',text:'#3D1520',sub:'#9A6070',ftBg:'#C0515A',ftText:'#fff'},
+  jade:{bg:'#EAF5F3',accent:'#2A7B6F',text:'#0F3530',sub:'#5A8880',ftBg:'#2A7B6F',ftText:'#fff'}
+};
+
+function openExport(){ drawCard(document.getElementById('exportCanvas')); document.getElementById('modalBg').classList.add('open'); }
+function closeModal(){ document.getElementById('modalBg').classList.remove('open'); }
+function openTeacher(){ document.getElementById('teacherBg').classList.add('open'); }
+function closeTeacher(){ document.getElementById('teacherBg').classList.remove('open'); }
+function openFrame(fi){
+  const sf=S.skelFrames?.[fi];
+  if(!sf) return;
+  const bg=document.getElementById('frameBg');
+  const c=document.getElementById('frameCanvas');
+  if(!bg||!c) return;
+  c.width=sf.canvas.width; c.height=sf.canvas.height;
+  c.getContext('2d').drawImage(sf.canvas,0,0);
+  bg.classList.add('open');
+}
+function closeFrame(){ document.getElementById('frameBg').classList.remove('open'); }
+
+function drawCard(canvas){
+  const W=520,H=780; canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  const t=TMPL[S.template];
+  const ai=S.aiResult;
+  ctx.fillStyle=t.bg; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=t.accent; ctx.fillRect(0,0,W,6);
+  ctx.font='bold 22px serif'; ctx.fillStyle=t.accent; ctx.textAlign='center';
+  ctx.fillText('快卷吧妈妈',W/2,52);
+  ctx.font='12px sans-serif'; ctx.fillStyle=t.sub;
+  ctx.fillText('AI 舞蹈夸夸报告',W/2,72);
+  const allC=Array.from(document.querySelectorAll('#framesRow .fpair canvas'));
+  const bC=allC[S.bestFrameIdx*2+1];
+  if(bC){
+    const fw=260,fh=170,fx=(W-fw)/2,fy=90;
+    ctx.save(); rrPath(ctx,fx,fy,fw,fh,12); ctx.clip();
+    ctx.drawImage(bC,fx,fy,fw,fh); ctx.restore();
+    ctx.strokeStyle=t.accent; ctx.lineWidth=2; rrPath(ctx,fx,fy,fw,fh,12); ctx.stroke();
+    ctx.fillStyle=t.accent; rrPath(ctx,fx+6,fy+6,56,18,4); ctx.fill();
+    ctx.font='bold 10px sans-serif'; ctx.fillStyle=t.ftText; ctx.textAlign='left';
+    ctx.fillText('最佳表现',fx+10,fy+19);
+  }
+  if(ai){
+    const labels=(S.mode==='quick')
+      ? [[ai.overall,'舞感'],[ai.upper,'舒展'],[ai.lower,'步伐']]
+      : [[ai.overall,'观察'],[ai.upper,'上身'],[ai.lower,'下身']];
+    labels.forEach(([sc,lb],i)=>{
+      const x=68+i*142, cy=305;
+      ctx.beginPath(); ctx.arc(x+40,cy,34,0,Math.PI*2);
+      ctx.fillStyle=t.accent+'28'; ctx.fill();
+      ctx.strokeStyle=t.accent; ctx.lineWidth=2; ctx.stroke();
+      ctx.font='bold 24px serif'; ctx.fillStyle=t.accent; ctx.textAlign='center';
+      ctx.fillText(sc,x+40,cy+8);
+      ctx.font='11px sans-serif'; ctx.fillStyle=t.sub; ctx.fillText(lb,x+40,cy+24);
+    });
+    let py=370;
+    ctx.font='bold 13px sans-serif'; ctx.fillStyle=t.accent; ctx.textAlign='left';
+    ctx.fillText('✦ 今日亮点',32,py); py+=22;
+    (ai.praise||[]).slice(0,2).forEach(p=>{
+      ctx.font='bold 12px sans-serif'; ctx.fillStyle=t.text; ctx.fillText('• '+p.title,32,py); py+=18;
+      ctx.font='11px sans-serif'; ctx.fillStyle=t.sub; py=wrapTxt(ctx,p.body,42,py,W-74,16)+6;
+    });
+    py+=6; ctx.font='bold 13px sans-serif'; ctx.fillStyle=t.accent; ctx.textAlign='left';
+    ctx.fillText('✦ 小小建议',32,py); py+=22;
+    (ai.improve||[]).slice(0,2).forEach(p=>{
+      ctx.font='bold 12px sans-serif'; ctx.fillStyle=t.text; ctx.fillText('• '+p.title,32,py); py+=18;
+      ctx.font='11px sans-serif'; ctx.fillStyle=t.sub; py=wrapTxt(ctx,p.body,42,py,W-74,16)+6;
+    });
+
+    if(ai.shareCaption){
+      py=Math.min(py+6,H-110);
+      ctx.font='bold 12px sans-serif'; ctx.fillStyle=t.accent; ctx.textAlign='left';
+      ctx.fillText('✦ 分享一句话',32,py); py+=18;
+      ctx.font='11px sans-serif'; ctx.fillStyle=t.sub;
+      wrapTxt(ctx, (ai.shareCaption||'').toString().trim(), 32, py, W-64, 16);
+    }
+  }
+  ctx.fillStyle=t.ftBg; ctx.fillRect(0,H-40,W,40);
+  ctx.font='11px sans-serif'; ctx.fillStyle=t.ftText; ctx.textAlign='center';
+  ctx.fillText('快卷吧妈妈 · 继续加油，妈妈你最棒！💪',W/2,H-15);
+}
+
+function wrapTxt(ctx,text,x,y,maxW,lh){
+  let line='';
+  for(const ch of text){
+    if(ctx.measureText(line+ch).width>maxW&&line){ ctx.fillText(line,x,y); y+=lh; line=ch; }
+    else line+=ch;
+  }
+  if(line){ ctx.fillText(line,x,y); y+=lh; }
+  return y;
+}
+function rrPath(ctx,x,y,w,h,r){
+  ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath();
+}
+function downloadCard(){
+  const a=document.createElement('a'); a.download='快卷吧妈妈成绩卡.png';
+  a.href=document.getElementById('exportCanvas').toDataURL('image/png'); a.click();
+}
+
+async function copyShare(){
+  const text=(document.getElementById('shareText')?.textContent||'').trim();
+  if(!text){ alert('还没有生成分享文案～'); return; }
+  try{
+    await navigator.clipboard.writeText(text);
+    alert('已复制到剪贴板，可以去发朋友圈/小红书啦～');
+  }catch(_){
+    // Fallback for insecure contexts
+    const ta=document.createElement('textarea');
+    ta.value=text;
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand('copy'); alert('已复制到剪贴板～'); }
+    catch(e){ alert('复制失败，请手动选择复制。'); }
+    document.body.removeChild(ta);
+  }
+}
+function setStep(n){
+  for(let i=1;i<=5;i++){
+    const nd=document.getElementById('sn'+i); if(nd) nd.className='snode'+(i<n?' done':i===n?' active':'');
+    const ln=document.getElementById('sl'+i); if(ln) ln.className='sline'+(i<n?' done':'');
+  }
+}
+function restart(){ location.reload(); }
+
+// Init (default: quick mode + gemini visual coach)
+updateProviderHint();
+applyModeToUI();
+updateNextButtonState();
+</script>
+</body>
+</html>
