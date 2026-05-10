@@ -13,6 +13,7 @@ from fastapi.responses import StreamingResponse
 from pose_detector import PoseDetector, draw_pose
 from metrics import compute_all_metrics
 from llm_evaluator import build_json_coach_prompt
+from metrics import normalize_landmarks, compute_joint_angle, JOINT_TRIPLES
 
 
 APP_TITLE = "快卷吧妈妈 · 本地骨骼服务"
@@ -234,6 +235,148 @@ def _scan_segment_for_metrics(
         )
 
     return picked_entries
+
+
+def _pose_angles_feature(landmarks_pixel: list | None) -> np.ndarray | None:
+    """
+    Convert a single pose (pixel landmarks) into an angle feature vector (degrees).
+    Returns shape (len(JOINT_TRIPLES),) or None if landmarks invalid.
+    """
+    norm = normalize_landmarks(landmarks_pixel)
+    if norm is None:
+        return None
+    angles = []
+    for _name, (i1, i2, i3) in JOINT_TRIPLES.items():
+        try:
+            ang = compute_joint_angle(norm[i1], norm[i2], norm[i3])
+        except Exception:
+            return None
+        angles.append(ang)
+    return np.asarray(angles, dtype=np.float32)
+
+
+def _scan_features(video_path: str, start_s: float, end_s: float, detector: PoseDetector, cache_id: str) -> tuple[list[float], list[np.ndarray | None]]:
+    """
+    Scan a segment at ~10fps and return timestamps + angle feature vectors.
+    """
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        cap.release()
+        raise RuntimeError(f"Cannot open video: {video_path}")
+    start_s = float(max(0.0, start_s))
+    end_s = float(max(start_s, end_s))
+    _cap_seek_seconds(cap, start_s)
+    times: list[float] = []
+    feats: list[np.ndarray | None] = []
+    step_s = 0.1
+    next_t = start_s
+    while True:
+        cur_t = float(cap.get(cv2.CAP_PROP_POS_MSEC) or (start_s * 1000.0)) / 1000.0
+        if cur_t > end_s + 0.05:
+            break
+        ret, frame = cap.read()
+        if not ret:
+            break
+        cur_t = float(cap.get(cv2.CAP_PROP_POS_MSEC) or (cur_t * 1000.0)) / 1000.0
+        if cur_t + 1e-6 < next_t:
+            continue
+        pose = detector.detect_center_person(frame, cache_id=cache_id)
+        lm_px = pose.get("landmarks_pixel") if pose else None
+        feat = _pose_angles_feature(lm_px)
+        times.append(cur_t)
+        feats.append(feat)
+        next_t += step_s
+        if cur_t >= end_s:
+            break
+    cap.release()
+    return times, feats
+
+
+def _best_shift(ref_feats: list[np.ndarray | None], self_feats: list[np.ndarray | None], max_shift_frames: int) -> tuple[int, float]:
+    """
+    Find best integer frame shift k minimizing mean squared angle difference.
+    Returns (best_k, best_cost). Positive k means self is shifted forward (self lags).
+    """
+    n_ref = len(ref_feats)
+    n_self = len(self_feats)
+    if n_ref == 0 or n_self == 0:
+        return 0, 1e9
+    best_k = 0
+    best_cost = 1e18
+    for k in range(-max_shift_frames, max_shift_frames + 1):
+        sse = 0.0
+        cnt = 0
+        for i in range(n_ref):
+            j = i + k
+            if j < 0 or j >= n_self:
+                continue
+            a = ref_feats[i]
+            b = self_feats[j]
+            if a is None or b is None:
+                continue
+            d = a - b
+            sse += float(np.dot(d, d))
+            cnt += 1
+        if cnt < max(6, min(n_ref, n_self) // 8):
+            continue
+        cost = sse / float(cnt)
+        if cost < best_cost:
+            best_cost = cost
+            best_k = k
+    return best_k, float(best_cost)
+
+
+@app.post("/api/compare/auto_align")
+async def compare_auto_align(
+    ref_video: UploadFile = File(...),
+    self_video: UploadFile = File(...),
+    ref_start: float = Form(0),
+    ref_end: float = Form(15),
+    self_start: float = Form(0),
+    self_end: float = Form(15),
+) -> dict[str, Any]:
+    """
+    Lightweight sliding alignment: scan both segments at ~10fps, compute per-frame joint-angle features,
+    then search a shift Δ within +/- 3s that maximizes similarity.
+    Returns suggested align times (seconds) for both videos.
+    """
+    if not os.path.exists(MODEL_PATH):
+        return {"ok": False, "error": f"Model file missing: {MODEL_PATH}"}
+
+    with tempfile.TemporaryDirectory(prefix="kqmm_") as td:
+        td_path = Path(td)
+        ref_path = td_path / "ref.mp4"
+        self_path = td_path / "self.mp4"
+        _save_upload(ref_video, ref_path)
+        _save_upload(self_video, self_path)
+
+        with PoseDetector(model_path=MODEL_PATH, num_poses=3, mode="video") as detector:
+            ref_times, ref_feats = _scan_features(str(ref_path), float(ref_start), float(ref_end), detector, "ref")
+            self_times, self_feats = _scan_features(str(self_path), float(self_start), float(self_end), detector, "self")
+
+        if not ref_times or not self_times:
+            return {"ok": False, "error": "No frames scanned for alignment"}
+
+        max_shift_frames = int(round(3.0 / 0.1))  # +/- 3 seconds at 10fps
+        k, cost = _best_shift(ref_feats, self_feats, max_shift_frames)
+        shift_s = float(k) * 0.1
+
+        # Suggest aligning both to their starts, with self shifted by -shift (so features line up)
+        ref_align = float(ref_start)
+        self_align = float(self_start) + shift_s
+        # Clamp to segment bounds
+        self_align = max(float(self_start), min(float(self_end) - 0.05, self_align))
+
+        # Confidence: map cost to [0,1] coarsely (lower is better). Angle features in degrees.
+        conf = float(np.exp(-cost / 900.0)) if cost < 1e12 else 0.0
+
+        return {
+            "ok": True,
+            "shift_s": round(shift_s, 3),
+            "confidence": round(conf, 3),
+            "ref_align": round(ref_align, 3),
+            "self_align": round(self_align, 3),
+        }
 
 
 def extract_keyframes_with_tracking(
