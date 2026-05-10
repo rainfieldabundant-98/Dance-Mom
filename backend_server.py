@@ -12,6 +12,7 @@ from fastapi.responses import StreamingResponse
 
 from pose_detector import PoseDetector, draw_pose
 from metrics import compute_all_metrics
+from llm_evaluator import build_json_coach_prompt
 
 
 APP_TITLE = "快卷吧妈妈 · 本地骨骼服务"
@@ -460,7 +461,14 @@ async def compare_metrics(
         if isinstance(pfa, dict) and isinstance(pfa.get("per_frame_scores"), list):
             compact["per_frame_scores"] = pfa["per_frame_scores"][:30]
 
-        return {"ok": True, "metrics": m, "compact": compact}
+        # A ready-to-use prompt (optional) built from the same rubric logic.
+        prompt = ""
+        try:
+            prompt = build_json_coach_prompt(compact)
+        except Exception:
+            prompt = ""
+
+        return {"ok": True, "metrics": m, "compact": compact, "prompt": prompt}
 
 
 @app.post("/api/compare/overlay_video")

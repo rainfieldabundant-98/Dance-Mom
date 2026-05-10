@@ -188,6 +188,35 @@ def build_coaching_prompt(metrics: dict) -> str:
     return prompt
 
 
+def build_json_coach_prompt(metrics: dict) -> str:
+    """
+    Build a compact prompt that asks the LLM to return STRICT JSON compatible with the front-end.
+
+    Reuses the same metric interpretation as build_coaching_prompt(), but constrains output length
+    and format to reduce truncation / JSON parse errors.
+    """
+    base = build_coaching_prompt(metrics)
+    return (
+        "你是一位温柔、具体、可执行的「妈妈舞蹈陪练」。\n"
+        "下面会给你一份量化指标说明与数据，请你“先夸夸→再建议”，并严格输出 JSON。\n"
+        "要求：不要出现与演讲/听众/语速/发言相关的词；每条建议要包含：部位+怎么做+怎么感觉+20~30秒小练习。\n"
+        "为避免被截断：praise/improve 各最多2条；每条 body≤90字；tip≤30字；shareCaption≤120字。\n\n"
+        "返回严格 JSON（不要代码块/不要多余文字）：\n"
+        "{\n"
+        '  \"overall\": 0-100,\n'
+        '  \"upper\": 0-100,\n'
+        '  \"lower\": 0-100,\n'
+        '  \"praise\": [{\"title\":\"标题\",\"body\":\"具体夸夸\",\"tip\":\"练习贴士（可选）\"}],\n'
+        '  \"improve\": [{\"title\":\"标题\",\"body\":\"温柔建议\",\"tip\":\"练习方法\"}],\n'
+        '  \"bestFrame\": 0-6,\n'
+        '  \"frameScores\": [7个0-100数字],\n'
+        '  \"shareCaption\": \"适合朋友圈/小红书的分享文案（1-2段）\"\n'
+        "}\n\n"
+        "量化指标说明与数据如下（供参考，不要照抄标题）：\n"
+        + base
+    )
+
+
 # ---------------------------------------------------------------------------
 # 2. Gemini Integration
 # ---------------------------------------------------------------------------
