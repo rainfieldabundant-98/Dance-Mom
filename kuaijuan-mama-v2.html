@@ -1409,7 +1409,8 @@ async function loadCompareMetricsFromBackend(){
     if(!resp.ok) return false;
     const data = await resp.json();
     if(!data?.ok) return false;
-    S.compareMetrics = data.metrics || null;
+    // Store full metrics for debugging, but use compact for prompts to reduce truncation.
+    S.compareMetrics = data.compact || data.metrics || null;
     return !!S.compareMetrics;
   }catch(_){
     return false;
@@ -1614,7 +1615,7 @@ async function callGemini(key){
     contents:[{parts}],
     generationConfig:{
       temperature:0.2,
-      maxOutputTokens:1800,
+      maxOutputTokens:2400,
       responseMimeType:'application/json'
     }
   };
@@ -1622,7 +1623,7 @@ async function callGemini(key){
     contents:[{parts}],
     generationConfig:{
       temperature:0.2,
-      maxOutputTokens:1800
+      maxOutputTokens:2400
     }
   };
 
@@ -1696,7 +1697,7 @@ function sanitizeJsonLike(text){
 
 async function callGeminiForJsonRepair(key, rawText){
   const parts=[{
-    text:`你是一个 JSON 修复器。下面是一段不完整或不合法的 JSON（可能被截断）。
+    text:`你是一个 JSON 修复器。下面是一段不完整或不合法的 JSON（可能被截断/字符串未闭合）。
 请你在“尽量不改变已有内容含义”的前提下，将其补全为一个合法的 JSON 对象，并且只输出 JSON，不要输出任何额外文字或代码块。
 
 重要：请补全为“完整 schema”，不要只输出半截字段。
@@ -1707,6 +1708,10 @@ async function callGeminiForJsonRepair(key, rawText){
 - shareCaption（字符串）
 - bestFrame（0-6整数）
 
+修复要求：
+- 所有字符串必须合法闭合；必要时可截断过长句子并补上省略号。
+- 禁止输出 markdown 代码块。
+
 不合法 JSON 如下：
 ${rawText}`
   }];
@@ -1715,7 +1720,7 @@ ${rawText}`
     contents:[{parts}],
     generationConfig:{
       temperature:0,
-      maxOutputTokens:1200,
+      maxOutputTokens:2200,
       responseMimeType:'application/json'
     }
   };

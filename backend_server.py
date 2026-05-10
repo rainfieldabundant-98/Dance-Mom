@@ -411,7 +411,56 @@ async def compare_metrics(
         except Exception as e:
             return {"ok": False, "error": f"metrics failed: {e.__class__.__name__}: {e}"}
 
-        return {"ok": True, "metrics": m}
+        # Compact view for LLM prompts (keep tokens small, avoid truncation).
+        compact: dict[str, Any] = {
+            "overall_score": m.get("overall_score", 0.0),
+            "breakdown": m.get("breakdown", {}),
+            "smoothness": m.get("smoothness", {}),
+            "stiffness": m.get("stiffness", {}),
+        }
+
+        # Worst joints by similarity
+        per_joint = (m.get("joint_angles") or {}).get("per_joint") or {}
+        worst = []
+        for name, info in per_joint.items():
+            try:
+                worst.append(
+                    {
+                        "joint": name,
+                        "similarity": float(info.get("similarity", 0.0)),
+                        "diff": float(info.get("diff", 0.0)),
+                    }
+                )
+            except Exception:
+                continue
+        worst.sort(key=lambda x: x["similarity"])
+        compact["worst_joints"] = worst[:6]
+
+        # Amplitude summary (ratio based)
+        amp = m.get("amplitude") or {}
+        per_point = (amp.get("per_point") or amp.get("per_joint") or {})  # compatibility
+        amp_list = []
+        for pt, info in per_point.items():
+            try:
+                ratio = float(info.get("ratio", 0.0))
+                amp_list.append(
+                    {
+                        "point": pt,
+                        "ratio": ratio,
+                        "score": float(info.get("score", info.get("amp_score", 0.0))),
+                        "dir": ("smaller" if ratio and ratio < 0.85 else "larger" if ratio and ratio > 1.15 else "ok"),
+                    }
+                )
+            except Exception:
+                continue
+        compact["amplitude_points"] = amp_list
+
+        # Per-frame scores (if present) but cap length
+        pfa = m.get("per_frame_angles") or {}
+        if isinstance(pfa, dict) and isinstance(pfa.get("per_frame_scores"), list):
+            compact["per_frame_scores"] = pfa["per_frame_scores"][:30]
+
+        return {"ok": True, "metrics": m, "compact": compact}
 
 
 @app.post("/api/compare/overlay_video")
